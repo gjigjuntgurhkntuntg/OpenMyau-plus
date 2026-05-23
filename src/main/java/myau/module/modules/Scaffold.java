@@ -235,9 +235,6 @@ public class Scaffold extends Module {
         if (!this.eagle.getValue() || !mc.thePlayer.onGround) {
             return false;
         }
-        if (this.isTowering() || mc.gameSettings.keyBindJump.isKeyDown()) {
-            return false;
-        }
         if (this.eagleBlocksPlaced < this.blocksPerSneak.getValue()) {
             return false;
         }
