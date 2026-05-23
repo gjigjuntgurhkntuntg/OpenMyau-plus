@@ -292,7 +292,6 @@ public class RenderFixes extends Module {
             lineY += fontHeight;
         }
 
-        drawAccentLine(x + 5.0F, y + height - 3.0F, width - 10.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         return true;
     }
@@ -389,22 +388,6 @@ public class RenderFixes extends Module {
         GlStateManager.enableAlpha();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-    }
-
-    private static void drawAccentLine(float x, float y, float width) {
-        if (width <= 0.0F) {
-            return;
-        }
-
-        int color = new Color(255, 255, 255, 35).getRGB();
-        if (Myau.moduleManager != null) {
-            Module hudModule = Myau.moduleManager.getModule(HUD.class);
-            if (hudModule instanceof HUD) {
-                Color hudColor = ((HUD) hudModule).getColor(System.currentTimeMillis());
-                color = new Color(hudColor.getRed(), hudColor.getGreen(), hudColor.getBlue(), 120).getRGB();
-            }
-        }
-        RenderUtil.drawRoundedRect(x, y, width, 1.0F, 0.5F, color, true, true, true, true);
     }
 
     private static final class Bounds {
