@@ -30,7 +30,7 @@ public class UFontRenderer extends FontRenderer {
         boolean antiAlias = true;
         Font font;
         try {
-            InputStream is = getClass().getResourceAsStream("/assets/unfair/fonts/" + name + ".ttf");
+            InputStream is = getClass().getResourceAsStream("/assets/myau/font/" + name + ".ttf");
             font = Font.createFont(0, is);
             font = font.deriveFont(Font.PLAIN, size);
         } catch (Exception ex) {

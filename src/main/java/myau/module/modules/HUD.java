@@ -23,14 +23,36 @@ import org.lwjgl.opengl.GL11;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class HUD extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
+    private static final Set<Class<?>> RENDER_MODULES = new HashSet<>(Arrays.<Class<?>>asList(
+            ESP.class, Chams.class, FullBright.class, Tracers.class, NameTags.class, Xray.class,
+            TargetESP.class, TargetHUD.class, Indicators.class, BedESP.class, ItemESP.class,
+            ViewClip.class, NoHurtCam.class, HUD.class, GuiModule.class, RiseClickGUIModule.class,
+            ChestESP.class, Trajectories.class, Radar.class, RenderFixes.class, FPScounter.class,
+            WaterMark.class, WaterMark2.class, HitParticleEffects.class, DynamicIsland.class,
+            ESP2D.class, TeamHealthDisplay.class, SeasonDisplay.class, Animations.class
+    ));
+    private static final Set<Class<?>> PLAYER_MODULES = new HashSet<>(Arrays.<Class<?>>asList(
+            AutoHeal.class, FakeLag.class, AutoTool.class, ChestStealer.class, InvManager.class,
+            InvWalk.class, Scaffold.class, AutoBlockIn.class, AutoSwap.class, SpeedMine.class,
+            FastPlace.class, GhostHand.class, MCF.class, AntiDebuff.class, FlagDetector.class,
+            AutoGapple.class, ThrowAura.class, InventoryClicker.class
+    ));
+    private static final Set<Class<?>> MISC_MODULES = new HashSet<>(Arrays.<Class<?>>asList(
+            Spammer.class, BedNuker.class, BedTracker.class, LightningTracker.class, NoRotate.class,
+            NickHider.class, AntiObbyTrap.class, AntiObfuscate.class, AutoAnduril.class,
+            Disabler.class, ClientSpoofer.class, AutoHypixel.class
+    ));
     private List<Module> activeModules = new ArrayList<>();
     public final ModeProperty colorMode = new ModeProperty(
             "color", 3, new String[]{"RAINBOW", "CHROMA", "ASTOLFO", "CUSTOM1", "CUSTOM12", "CUSTOM123"}
@@ -49,12 +71,18 @@ public class HUD extends Module {
     public final ModeProperty interfaceMode = new ModeProperty("interface", 0, new String[]{"MYAU", "CREIDA"});
     public final PercentProperty background = new PercentProperty("background", 25);
     public final BooleanProperty showBar = new BooleanProperty("bar", true);
+    public final ModeProperty sidebarMode = new ModeProperty("sidebar-mode", 0, new String[]{"RIGHT", "LEFT", "TOP", "OUTLINE", "NONE"}, this.showBar::getValue);
     public final BooleanProperty shadow = new BooleanProperty("shadow", true);
     public final FloatProperty colorDistance = new FloatProperty("color-dist", 50F, 10F, 100F);
     public final BooleanProperty suffixes = new BooleanProperty("suffixes", true);
+    public final ModeProperty separatorMode = new ModeProperty("separator-mode", 0, new String[]{"SPACE", "-", "!", "[]", "{}", "()", "\"\""}, this.suffixes::getValue);
     public final BooleanProperty lowerCase = new BooleanProperty("lower-case", false);
+    public final BooleanProperty hideRender = new BooleanProperty("hide-render", false);
+    public final BooleanProperty hidePlayer = new BooleanProperty("hide-player", false);
+    public final BooleanProperty hideMisc = new BooleanProperty("hide-misc", false);
     public final BooleanProperty chatOutline = new BooleanProperty("chat-outline", true);
     public final BooleanProperty blinkTimer = new BooleanProperty("blink-timer", true);
+    public final BooleanProperty notifications = new BooleanProperty("notifications", true);
     public final BooleanProperty toggleSound = new BooleanProperty("toggle-sounds", true);
     public final BooleanProperty toggleAlerts = new BooleanProperty("toggle-alerts", false);
     public final ModeProperty fontMode = new ModeProperty("font-mode", 0, new String[]{"SANS", "MINECRAFT", "NUNITO"});
@@ -112,17 +140,38 @@ public class HUD extends Module {
         }
         if (this.suffixes.getValue()) {
             for (String str : arr) {
-                switch (fontMode.getValue()) {
-                    case 1: // MINECRAFT
-                        width += 3 + mcFont.getStringWidth(str);
-                        break;
-                    default:
-                        width += 3 + fontRenderer.getStringWidth(str);
-                        break;
-                }
+                width += getStringWidth(this.formatSuffix(str));
             }
         }
         return width;
+    }
+
+    private int getStringWidth(String string) {
+        switch (fontMode.getValue()) {
+            case 1:
+                return mcFont.getStringWidth(string);
+            default:
+                return fontRenderer.getStringWidth(string);
+        }
+    }
+
+    private String formatSuffix(String suffix) {
+        switch (this.separatorMode.getValue()) {
+            case 1:
+                return " - " + suffix;
+            case 2:
+                return " ! " + suffix;
+            case 3:
+                return " [" + suffix + "]";
+            case 4:
+                return " {" + suffix + "}";
+            case 5:
+                return " (" + suffix + ")";
+            case 6:
+                return " \"" + suffix + "\"";
+            default:
+                return " " + suffix;
+        }
     }
 
     private float getColorCycle(long long3, long long4) {
@@ -227,8 +276,94 @@ public class HUD extends Module {
     @EventTarget
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.POST) {
-            this.activeModules = Myau.moduleManager.modules.values().stream().filter(module -> module.isEnabled() && !module.isHidden()).sorted(Comparator.comparingInt(this::getModuleWidth).reversed()).collect(Collectors.<Module>toList());
+            this.activeModules = Myau.moduleManager.modules.values().stream().filter(this::shouldShowInArraylist).sorted(Comparator.comparingInt(this::getModuleWidth).reversed()).collect(Collectors.<Module>toList());
         }
+    }
+
+    private boolean shouldShowInArraylist(Module module) {
+        return module != null && module.isEnabled() && !module.isHidden() && !isHiddenByArraylistCategory(module);
+    }
+
+    private boolean isHiddenByArraylistCategory(Module module) {
+        Class<?> moduleClass = module.getClass();
+        return (this.hideRender.getValue() && RENDER_MODULES.contains(moduleClass))
+                || (this.hidePlayer.getValue() && PLAYER_MODULES.contains(moduleClass))
+                || (this.hideMisc.getValue() && MISC_MODULES.contains(moduleClass));
+    }
+
+    private boolean hasSidebar() {
+        return this.showBar.getValue() && this.sidebarMode.getValue() != 4;
+    }
+
+    private float getModuleRenderWidth(Module module) {
+        return (float) this.calculateStringWidth(this.getModuleName(module), this.getModuleSuffix(module));
+    }
+
+    private void renderSidebar(Module module, int index, float bgX1, float bgY1, float bgX2, float bgY2, int color) {
+        if (!this.hasSidebar()) {
+            return;
+        }
+
+        float thickness = 1.0F;
+        boolean first = index == 0;
+        boolean last = index == this.activeModules.size() - 1;
+        boolean topList = this.posY.getValue() == 0;
+        boolean visualFirst = topList ? first : last;
+        boolean visualLast = topList ? last : first;
+
+        switch (this.sidebarMode.getValue()) {
+            case 1:
+                drawVerticalSidebar(bgX1 - thickness, bgY1, bgY2, thickness, color);
+                break;
+            case 2:
+                if (visualFirst) {
+                    RenderUtil.drawRect(bgX1, bgY1 - thickness, bgX2, bgY1, color);
+                }
+                break;
+            case 3:
+                drawVerticalSidebar(bgX2, bgY1, bgY2, thickness, color);
+                drawVerticalSidebar(bgX1 - thickness, bgY1, bgY2, thickness, color);
+                if (visualFirst) {
+                    RenderUtil.drawRect(bgX1 - thickness, bgY1 - thickness, bgX2 + thickness, bgY1, color);
+                } else {
+                    renderOutlineConnector(module, index, bgX1, bgY1, bgX2, bgY2, thickness, color);
+                }
+                if (visualLast) {
+                    RenderUtil.drawRect(bgX1 - thickness, bgY2, bgX2 + thickness, bgY2 + thickness, color);
+                }
+                break;
+            default:
+                drawVerticalSidebar(bgX2, bgY1, bgY2, thickness, color);
+                break;
+        }
+    }
+
+    private void renderOutlineConnector(Module module, int index, float bgX1, float bgY1, float bgX2, float bgY2, float thickness, int color) {
+        if (index <= 0) {
+            return;
+        }
+
+        Module previous = this.activeModules.get(index - 1);
+        float previousWidth = this.getModuleRenderWidth(previous);
+        float rectExtraWidth = 2.0F + this.padding.getValue() * 2.0F;
+        float boundaryY1 = this.posY.getValue() == 0 ? bgY1 - thickness : bgY2;
+        float boundaryY2 = this.posY.getValue() == 0 ? bgY1 : bgY2 + thickness;
+
+        if (this.posX.getValue() == 0) {
+            float previousRight = bgX1 + previousWidth + rectExtraWidth;
+            float start = Math.min(previousRight, bgX2);
+            float end = Math.max(previousRight, bgX2) + thickness;
+            RenderUtil.drawRect(start, boundaryY1, end, boundaryY2, color);
+        } else {
+            float previousLeft = bgX2 - previousWidth - rectExtraWidth;
+            float start = Math.min(previousLeft, bgX1) - thickness;
+            float end = Math.max(previousLeft, bgX1);
+            RenderUtil.drawRect(start, boundaryY1, end, boundaryY2, color);
+        }
+    }
+
+    private void drawVerticalSidebar(float x, float y1, float y2, float width, int color) {
+        RenderUtil.drawRect(x, y1, x + width, y2, color);
     }
 
     @EventTarget
@@ -258,7 +393,7 @@ public class HUD extends Module {
             } else {
             float height = (float) fontRenderer.FONT_HEIGHT - 1.0F;
             float x = (float) this.offsetX.getValue()
-                    + (1.0F + (this.showBar.getValue() ? (this.shadow.getValue() ? 2.0F : 1.0F) : 0.0F)) * this.scale.getValue();
+                    + (1.0F + (this.hasSidebar() ? 1.0F : 0.0F)) * this.scale.getValue();
             float y = (float) this.offsetY.getValue() + 1.0F * this.scale.getValue();
             if (this.posX.getValue() == 1) {
                 x = (float) new ScaledResolution(mc).getScaledWidth() - x;
@@ -275,15 +410,15 @@ public class HUD extends Module {
             for (Module module : this.activeModules) {
                 String moduleName = this.getModuleName(module);
                 String[] moduleSuffix = this.getModuleSuffix(module);
-                float totalWidth = (float) (this.calculateStringWidth(moduleName, moduleSuffix) - (this.shadow.getValue() ? 0 : 1));
+                float totalWidth = this.getModuleRenderWidth(module);
                 int color = this.getColor(l, offset).getRGB();
+                float pad = this.padding.getValue();
+                float bgX1 = x / this.scale.getValue() - 1.0F - pad - (this.posX.getValue() == 0 ? 0.0F : totalWidth);
+                float bgY1 = y / this.scale.getValue() - pad - (this.posY.getValue() == 0 ? (offset == 0L ? 1.0F : 0.0F) : (this.shadow.getValue() ? 1.0F : 0.0F));
+                float bgX2 = x / this.scale.getValue() + 1.0F + pad + (this.posX.getValue() == 0 ? totalWidth : 0.0F);
+                float bgY2 = y / this.scale.getValue() + height + pad + (this.posY.getValue() == 0 ? (this.shadow.getValue() ? 1.0F : 0.0F) : (offset == 0L ? 1.0F : 0.0F));
                 RenderUtil.enableRenderState();
                 if (this.background.getValue() > 0) {
-                    float pad = this.padding.getValue();
-                    float bgX1 = x / this.scale.getValue() - 1.0F - pad - (this.posX.getValue() == 0 ? 0.0F : totalWidth);
-                    float bgY1 = y / this.scale.getValue() - pad - (this.posY.getValue() == 0 ? (offset == 0L ? 1.0F : 0.0F) : (this.shadow.getValue() ? 1.0F : 0.0F));
-                    float bgX2 = x / this.scale.getValue() + 1.0F + pad + (this.posX.getValue() == 0 ? totalWidth : 0.0F);
-                    float bgY2 = y / this.scale.getValue() + height + pad + (this.posY.getValue() == 0 ? (this.shadow.getValue() ? 1.0F : 0.0F) : (offset == 0L ? 1.0F : 0.0F));
                     int bgColor = new Color(0.0F, 0.0F, 0.0F, this.background.getValue().floatValue() / 100.0F).getRGB();
                     if (this.rounded.getValue()) {
                         float bgW = bgX2 - bgX1;
@@ -304,33 +439,7 @@ public class HUD extends Module {
                         RenderUtil.drawRect(bgX1, bgY1, bgX2, bgY2, bgColor);
                     }
                 }
-                if (this.showBar.getValue()) {
-                    float pad = this.padding.getValue();
-                    if (this.shadow.getValue()) {
-                        RenderUtil.drawRect(
-                                x / this.scale.getValue() + (this.posX.getValue() == 0 ? -3.0F : 1.0F),
-                                y / this.scale.getValue() - pad - (this.posY.getValue() == 0 ? (offset == 0L ? 1.0F : 0.0F) : 1.0F),
-                                x / this.scale.getValue() + (this.posX.getValue() == 0 ? -2.0F : 2.0F),
-                                y / this.scale.getValue() + height + pad + (this.posY.getValue() == 0 ? 1.0F : (offset == 0L ? 1.0F : 0.0F)),
-                                color
-                        );
-                        RenderUtil.drawRect(
-                                x / this.scale.getValue() + (this.posX.getValue() == 0 ? -2.0F : 2.0F),
-                                y / this.scale.getValue() - pad - (this.posY.getValue() == 0 ? (offset == 0L ? 1.0F : 0.0F) : 1.0F),
-                                x / this.scale.getValue() + (this.posX.getValue() == 0 ? -1.0F : 3.0F),
-                                y / this.scale.getValue() + height + pad + (this.posY.getValue() == 0 ? 1.0F : (offset == 0L ? 1.0F : 0.0F)),
-                                (color & 16579836) >> 2 | color & 0xFF000000
-                        );
-                    } else {
-                        RenderUtil.drawRect(
-                                x / this.scale.getValue() + (this.posX.getValue() == 0 ? -2.0F : 1.0F),
-                                y / this.scale.getValue() - pad - (this.posY.getValue() == 0 ? (offset == 0L ? 1.0F : 0.0F) : 0.0F),
-                                x / this.scale.getValue() + (this.posX.getValue() == 0 ? -1.0F : 2.0F),
-                                y / this.scale.getValue() + height + pad + (this.posY.getValue() == 0 ? 0.0F : (offset == 0L ? 1.0F : 0.0F)),
-                                color
-                        );
-                    }
-                }
+                renderSidebar(module, (int) offset, bgX1, bgY1, bgX2, bgY2, color);
                 RenderUtil.disableRenderState();
                 GlStateManager.disableDepth();
                 if (this.shadow.getValue()) {
@@ -362,13 +471,14 @@ public class HUD extends Module {
                     float width;
                     switch (fontMode.getValue()) {
                         case 1: // MINECRAFT
-                            width = (float) mcFont.getStringWidth(moduleName) + 3.0F;
+                            width = (float) mcFont.getStringWidth(moduleName);
                             break;
                         default:
-                            width = (float) fontRenderer.getStringWidth(moduleName) + 3.0F;
+                            width = (float) fontRenderer.getStringWidth(moduleName);
                             break;
                     }
-                    for (String string : moduleSuffix) {
+                    for (String suffix : moduleSuffix) {
+                        String string = this.formatSuffix(suffix);
                         if (this.shadow.getValue()) {
                             if (fontMode.getValue() == 1) { // MINECRAFT
                                 mcFont.drawStringWithShadow(
@@ -404,7 +514,7 @@ public class HUD extends Module {
                                 );
                             }
                         }
-                        width += (fontMode.getValue() == 1 ? (float) mcFont.getStringWidth(string) : (float) fontRenderer.getStringWidth(string)) + (this.shadow.getValue() ? 3.0F : 2.0F);
+                        width += this.getStringWidth(string);
                     }
                 }
                 y += (height + (this.shadow.getValue() ? 1.0F : 0.0F) + this.padding.getValue() * 2.0F) * this.scale.getValue() * (this.posY.getValue() == 0 ? 1.0F : -1.0F);
@@ -595,6 +705,8 @@ public class HUD extends Module {
     }
 
     private void renderNotifications() {
+        if (!this.notifications.getValue()) return;
+
         try {
             if (Myau.notificationManager == null) return;
 
@@ -759,7 +871,9 @@ public class HUD extends Module {
         drawHudText(main, x, y, neutralColor);
         drawHudText(suffix.trim(), x + getHudTextWidth(main + " "), y, statusColor);
     }
+
+    @Override
+    public boolean shouldKeepSprint() {
+        return false;
+    }
 }
-
-
-

@@ -15,11 +15,30 @@ public class KeepSprint extends Module {
         super("KeepSprint", false);
     }
 
+    @Override
     public boolean shouldKeepSprint() {
-        if (this.groundOnly.getValue() && !mc.thePlayer.onGround) {
+
+        if (mc.thePlayer == null || mc.theWorld == null) {
             return false;
-        } else {
-            return !this.reachOnly.getValue() || mc.objectMouseOver.hitVec.distanceTo(mc.getRenderViewEntity().getPositionEyes(1.0F)) > 3.0;
         }
+
+        if (groundOnly.getValue() && !mc.thePlayer.onGround) {
+            return false;
+        }
+
+        if (reachOnly.getValue()) {
+
+            if (mc.objectMouseOver == null || mc.objectMouseOver.hitVec == null) {
+                return false;
+            }
+
+            double distance = mc.objectMouseOver.hitVec.distanceTo(
+                    mc.getRenderViewEntity().getPositionEyes(1.0F)
+            );
+
+            return distance > 3.0;
+        }
+
+        return true;
     }
 }

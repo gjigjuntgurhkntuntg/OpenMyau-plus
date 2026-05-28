@@ -23,6 +23,7 @@ public class HitSelect extends Module {
 
     private boolean sprintState = false;
     private boolean set = false;
+    private boolean keepSprintWasEnabled = false;
     private double savedSlowdown = 0.0;
 
     private int blockedHits = 0;
@@ -188,10 +189,11 @@ public class HitSelect extends Module {
         try {
             // Save the current slowdown value
             this.savedSlowdown = keepSprint.slowdown.getValue().doubleValue();
+            this.keepSprintWasEnabled = keepSprint.isEnabled();
 
-            // Enable KeepSprint and set slowdown to 0
-            if (!keepSprint.isEnabled()) {
-                keepSprint.toggle();
+            // Temporarily enable KeepSprint silently so this internal motion fix does not spam toggles.
+            if (!this.keepSprintWasEnabled) {
+                keepSprint.setEnabled(true);
             }
             keepSprint.slowdown.setValue(0);
 
@@ -215,15 +217,16 @@ public class HitSelect extends Module {
             // Restore the original slowdown value
             keepSprint.slowdown.setValue((int) this.savedSlowdown);
 
-            // Disable KeepSprint if we enabled it
-            if (keepSprint.isEnabled()) {
-                keepSprint.toggle();
+            // Only restore the enabled state if HitSelect changed it.
+            if (!this.keepSprintWasEnabled && keepSprint.isEnabled()) {
+                keepSprint.setEnabled(false);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         this.set = false;
+        this.keepSprintWasEnabled = false;
         this.savedSlowdown = 0.0;
     }
 

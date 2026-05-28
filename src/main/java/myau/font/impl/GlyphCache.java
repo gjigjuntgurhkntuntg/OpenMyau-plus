@@ -278,7 +278,7 @@ public class GlyphCache {
             imageData[i] = (color << 8) | (color >>> 24);
         }
         imageBuffer.clear();
-        imageBuffer.put(imageData);
+        imageBuffer.put(imageData, 0, width * height);
         imageBuffer.flip();
     }
 

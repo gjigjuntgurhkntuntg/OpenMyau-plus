@@ -116,4 +116,7 @@ public abstract class Module {
     public void verifyValue(String string) {
     }
 
+    public boolean shouldKeepSprint() {
+        return false;
+    }
 }
