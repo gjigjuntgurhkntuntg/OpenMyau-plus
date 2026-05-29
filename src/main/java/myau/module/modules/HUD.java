@@ -34,6 +34,19 @@ import java.util.stream.Collectors;
 
 public class HUD extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
+    public static int targetHUDX = 100;
+    public static int targetHUDY = 100;
+
+    public static void setTargetHUDPosition(int x, int y) {
+        targetHUDX = x;
+        targetHUDY = y;
+    }
+
+    public static void resetTargetHUDPosition() {
+        targetHUDX = 100;
+        targetHUDY = 100;
+    }
+
     private static final Set<Class<?>> RENDER_MODULES = new HashSet<>(Arrays.<Class<?>>asList(
             ESP.class, Chams.class, FullBright.class, Tracers.class, NameTags.class, Xray.class,
             TargetESP.class, TargetHUD.class, Indicators.class, BedESP.class, ItemESP.class,
