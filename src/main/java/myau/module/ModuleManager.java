@@ -7,6 +7,7 @@ import myau.events.KeyEvent;
 import myau.events.TickEvent;
 import myau.module.modules.GuiModule;
 import myau.module.modules.HUD;
+import myau.module.modules.SelfDestruct;
 import myau.util.ChatUtil;
 import myau.util.SoundUtil;
 
@@ -30,6 +31,7 @@ public class ModuleManager {
 
     @EventTarget
     public void onKey(KeyEvent event) {
+        if (SelfDestruct.destruct) return;
         for (Module module : this.modules.values()) {
             if (module.getKey() != event.getKey()) {
                 continue;
