@@ -140,6 +140,7 @@ public class Myau {
         moduleManager.modules.put(NoSlow.class, new NoSlow());
         moduleManager.modules.put(ClickAssits.class, new ClickAssits());
         moduleManager.modules.put(Timer.class, new Timer());
+        moduleManager.modules.put(BreakProgress.class , new BreakProgress());
         moduleManager.modules.put(SprintReset.class, new SprintReset());
         moduleManager.modules.put(Radar.class, new Radar());
         moduleManager.modules.put(Reach.class, new Reach());
@@ -150,6 +151,7 @@ public class Myau {
         moduleManager.modules.put(Scaffold.class, new Scaffold());
         moduleManager.modules.put(AutoBlockIn.class, new AutoBlockIn());
         moduleManager.modules.put(AntiBot.class, new AntiBot());
+        moduleManager.modules.put(AutoBedDef.class, new AutoBedDef());
         moduleManager.modules.put(SeasonDisplay.class, new SeasonDisplay());
         moduleManager.modules.put(Spammer.class, new Spammer());
         moduleManager.modules.put(Speed.class, new Speed());
