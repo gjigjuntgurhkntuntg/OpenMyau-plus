@@ -18,7 +18,7 @@ public class GlowUtils { // we always love ai right(no)? credit: ChatGPT and Hor
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, Integer> eldest) {
             if (size() > MAX_CACHE) {
-                GL11.glDeleteTextures(eldest.getValue());
+                GL11.glDeleteTextures(new int[]{eldest.getValue()});
                 return true;
             }
             return false;

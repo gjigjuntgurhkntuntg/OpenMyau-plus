@@ -6,6 +6,7 @@ import myau.event.types.Priority;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -63,11 +64,7 @@ public final class EventManager {
      */
     public static void unregister(Object object) {
         for (final List<MethodData> dataList : REGISTRY_MAP.values()) {
-            for (final MethodData data : dataList) {
-                if (data.getSource().equals(object)) {
-                    dataList.remove(data);
-                }
-            }
+            dataList.removeIf(data -> data.getSource().equals(object));
         }
         cleanMap(true);
     }
@@ -80,11 +77,7 @@ public final class EventManager {
      */
     public static void unregister(Object object, Class<? extends Event> eventClass) {
         if (REGISTRY_MAP.containsKey(eventClass)) {
-            for (final MethodData data : REGISTRY_MAP.get(eventClass)) {
-                if (data.getSource().equals(object)) {
-                    REGISTRY_MAP.get(eventClass).remove(data);
-                }
-            }
+            REGISTRY_MAP.get(eventClass).removeIf(data -> data.getSource().equals(object));
             cleanMap(true);
         }
     }
@@ -148,7 +141,8 @@ public final class EventManager {
     public static void cleanMap(boolean onlyEmptyEntries) {
         Iterator<Map.Entry<Class<? extends Event>, List<MethodData>>> mapIterator = REGISTRY_MAP.entrySet().iterator();
         while (mapIterator.hasNext()) {
-            if (!onlyEmptyEntries || mapIterator.next().getValue().isEmpty()) {
+            Map.Entry<Class<? extends Event>, List<MethodData>> entry = mapIterator.next();
+            if (!onlyEmptyEntries || entry.getValue().isEmpty()) {
                 mapIterator.remove();
             }
         }
