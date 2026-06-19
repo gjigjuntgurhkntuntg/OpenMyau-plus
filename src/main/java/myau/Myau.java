@@ -174,7 +174,6 @@ public class Myau {
         moduleManager.modules.put(Animations.class, new Animations());
         moduleManager.modules.put(AutoGapple.class, new AutoGapple());
         moduleManager.modules.put(HitParticleEffects.class, new HitParticleEffects());
-        moduleManager.modules.put(SelfDestruct.class, new SelfDestruct());
         commandManager.commands.add(new BindCommand());
         commandManager.commands.add(new ClickGuiCommand());
         commandManager.commands.add(new ConfigCommand());
