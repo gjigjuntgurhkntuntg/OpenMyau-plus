@@ -381,10 +381,6 @@ public class RavenClickGui extends GuiScreen {
     @Override
     public void onGuiClosed() {
         this.logoSmoothLength = null;
-        this.logoSmoothWidth = null;
-        this.smoothEntity = null;
-        this.backgroundFade = null;
-        this.blurSmooth = null;
         for (CategoryComponent c : categories) {
             c.dragging = false;
             for (Component m : c.getModules()) {

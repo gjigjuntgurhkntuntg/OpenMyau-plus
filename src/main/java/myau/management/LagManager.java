@@ -108,7 +108,6 @@ public class LagManager {
                 || event.getPacket() instanceof C01PacketPing
                 || event.getPacket() instanceof C01PacketEncryptionResponse) {
             this.setDelay(0);
-            this.packetQueue.clear();
         }
     }
 

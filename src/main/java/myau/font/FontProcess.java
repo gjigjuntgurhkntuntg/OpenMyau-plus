@@ -100,16 +100,10 @@ public class FontProcess {
         }
     }
 
-    private static final int MAX_SCALED_CACHE_SIZE = 32;
-
     public static CFontRenderer getScaledFont(String name, float scale) {
         String cacheKey = name + "|" + scale;
         if (scaledFontCache.containsKey(cacheKey)) {
             return scaledFontCache.get(cacheKey);
-        }
-
-        if (scaledFontCache.size() >= MAX_SCALED_CACHE_SIZE) {
-            scaledFontCache.clear();
         }
 
         CFontRenderer original = getFont(name);

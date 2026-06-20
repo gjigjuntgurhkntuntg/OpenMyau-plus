@@ -485,8 +485,8 @@ public class CFontRenderer extends CFont {
         };
 
         for (ResourceLocation location : locations) {
-            try (InputStream stream = Minecraft.getMinecraft().getResourceManager().getResource(location).getInputStream()) {
-                Font font = Font.createFont(fontType, stream);
+            try {
+                Font font = Font.createFont(fontType, Minecraft.getMinecraft().getResourceManager().getResource(location).getInputStream());
                 return font.deriveFont(fontSize);
             } catch (Exception ignored) {
             }
