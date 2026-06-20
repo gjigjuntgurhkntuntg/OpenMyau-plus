@@ -256,6 +256,9 @@ public class GlyphCache {
     }
 
     private void allocateGlyphCacheTexture() {
+        if (textureName != 0) {
+            GL11.glDeleteTextures(textureName);
+        }
         glyphCacheGraphics.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
         singleIntBuffer.clear();
         GL11.glGenTextures(singleIntBuffer);

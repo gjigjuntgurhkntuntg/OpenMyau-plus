@@ -19,6 +19,11 @@ public final class EnhancedFontRenderer {
         instances.add(this);
     }
 
+    public void dispose() {
+        releaseAll();
+        instances.remove(this);
+    }
+
     public static List<EnhancedFontRenderer> getInstances() {
         return instances;
     }
