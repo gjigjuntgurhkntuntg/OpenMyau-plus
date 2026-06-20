@@ -464,11 +464,11 @@ public class ShaderUtils {
     }
 
     private static String readInputStream(InputStream inputStream) {
-        try (InputStream is = inputStream) {
+        try {
             StringBuilder sb = new StringBuilder();
             byte[] buffer = new byte[1024];
             int len;
-            while ((len = is.read(buffer)) != -1) {
+            while ((len = inputStream.read(buffer)) != -1) {
                 sb.append(new String(buffer, 0, len));
             }
             return sb.toString();

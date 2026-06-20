@@ -88,15 +88,9 @@ public class BlinkManager {
     @EventTarget
     public void onTick(TickEvent event) {
         if (event.getType() == EventType.POST) {
-            if (mc.thePlayer == null || mc.thePlayer.isDead) {
+            if (mc.thePlayer.isDead) {
                 this.setBlinkState(false, this.blinkModule);
             }
         }
-    }
-
-    public void clearOnDisconnect() {
-        this.blinking = false;
-        this.blinkedPackets.clear();
-        this.blinkModule = BlinkModules.NONE;
     }
 }

@@ -45,10 +45,9 @@ public class AccountManager {
     public static void load() {
         accounts.clear();
         try {
-            JsonElement json;
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                json = new JsonParser().parse(reader);
-            }
+            JsonElement json = new JsonParser().parse(
+                    new BufferedReader(new FileReader(file))
+            );
             if (json instanceof JsonArray) {
                 JsonArray jsonArray = json.getAsJsonArray();
                 for (JsonElement jsonElement : jsonArray) {
@@ -83,9 +82,9 @@ public class AccountManager {
                 jsonObject.addProperty("type", account.getType());
                 jsonArray.add(jsonObject);
             }
-            try (PrintWriter printWriter = new PrintWriter(new FileWriter(file))) {
-                printWriter.println(gson.toJson(jsonArray));
-            }
+            PrintWriter printWriter = new PrintWriter(new FileWriter(file));
+            printWriter.println(gson.toJson(jsonArray));
+            printWriter.close();
         } catch (IOException e) {
             System.err.print("Couldn't save openmyau.accounts.json!");
         }
