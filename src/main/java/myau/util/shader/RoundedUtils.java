@@ -238,4 +238,44 @@ public class RoundedUtils {
     private static float getAlpha(int color) {
         return (color >> 24 & 0xFF) / 255.0F;
     }
+
+    public static void drawRoundOutline(
+            float x,
+            float y,
+            float width,
+            float height,
+            float radius,
+            float outlineThickness,
+            Color color,
+            Color outlineColor) {
+        RenderUtil.resetColor();
+        RenderUtil.startBlend();
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        RenderUtil.setAlphaLimit(0);
+        roundedOutlineShader.init();
+
+        ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
+        setupRoundedRectUniforms(x, y, width, height, radius, roundedOutlineShader);
+        roundedOutlineShader.setUniformf("outlineThickness", outlineThickness * sr.getScaleFactor());
+        roundedOutlineShader.setUniformf(
+                "color",
+                color.getRed() / 255f,
+                color.getGreen() / 255f,
+                color.getBlue() / 255f,
+                color.getAlpha() / 255f);
+        roundedOutlineShader.setUniformf(
+                "outlineColor",
+                outlineColor.getRed() / 255f,
+                outlineColor.getGreen() / 255f,
+                outlineColor.getBlue() / 255f,
+                outlineColor.getAlpha() / 255f);
+
+        ShaderUtils.drawQuads(
+                x - (2 + outlineThickness),
+                y - (2 + outlineThickness),
+                width + (4 + outlineThickness * 2),
+                height + (4 + outlineThickness * 2));
+        roundedOutlineShader.unload();
+        RenderUtil.endBlend();
+    }
 }

@@ -12,8 +12,7 @@ public class TimerUtil {
     }
 
     public void reset() {
-        lastMS = System.currentTimeMillis();
-        this.previousTime = System.currentTimeMillis();
+        this.lastMS = System.currentTimeMillis();
     }
 
     public long getElapsedTime() {

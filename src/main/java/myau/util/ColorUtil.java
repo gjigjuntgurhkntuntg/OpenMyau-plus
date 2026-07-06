@@ -21,6 +21,26 @@ public class ColorUtil {
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), Math.min(255, Math.max(0, alpha)));
     }
 
+    public static Color interpolateColorC(Color color1, Color color2, float amount) {
+        amount = Math.min(1, Math.max(0, amount));
+        return new Color(interpolateInt(color1.getRed(), color2.getRed(), amount),
+                interpolateInt(color1.getGreen(), color2.getGreen(), amount),
+                interpolateInt(color1.getBlue(), color2.getBlue(), amount),
+                interpolateInt(color1.getAlpha(), color2.getAlpha(), amount));
+    }
+
+    public static float interpolateFloat(float oldValue, float newValue, double interpolationValue){
+        return interpolate(oldValue, newValue, (float) interpolationValue).floatValue();
+    }
+
+    public static int interpolateInt(int oldValue, int newValue, double interpolationValue){
+        return interpolate(oldValue, newValue, (float) interpolationValue).intValue();
+    }
+
+    public static Double interpolate(double oldValue, double newValue, double interpolationValue){
+        return (oldValue + (newValue - oldValue) * interpolationValue);
+    }
+
     public static Color getHealthBlend(float percent) {
         if (percent >= 0.9f) {
             return GREEN;

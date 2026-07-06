@@ -8,6 +8,7 @@ import myau.property.properties.ModeProperty;
 import myau.ui.ClickGui;
 import myau.ui.impl.clickgui.normal.ClickGuiScreen;
 import myau.ui.impl.clickgui.raven.RavenClickGui;
+import myau.ui.impl.clickgui.cheadle.CheadleClickGui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import org.lwjgl.input.Keyboard;
@@ -33,7 +34,7 @@ public class ClickGUIModule extends Module {
     };
 
     public ModeProperty accentColor = new ModeProperty("Color", 0, COLOR_NAMES);
-    public ModeProperty style = new ModeProperty("Style", 0, new String[]{"Normal", "Raven B3", "Raven B4"});
+    public ModeProperty style = new ModeProperty("Style", 0, new String[]{"Normal", "Raven B3", "Raven B4", "Cheadle"});
     public BooleanProperty saveGuiState = new BooleanProperty("Save GUI State", true);
     public BooleanProperty shadow = new BooleanProperty("Shadow", true);
 
@@ -57,7 +58,8 @@ public class ClickGUIModule extends Module {
         GuiScreen screen = getSelectedGui();
         this.switchingGuiStyle = mc.currentScreen instanceof ClickGui
                 || mc.currentScreen instanceof ClickGuiScreen
-                || mc.currentScreen instanceof RavenClickGui;
+                || mc.currentScreen instanceof RavenClickGui
+                || mc.currentScreen instanceof CheadleClickGui;
         try {
             mc.displayGuiScreen(screen);
         } finally {
@@ -77,6 +79,10 @@ public class ClickGUIModule extends Module {
             RavenClickGui raven = RavenClickGui.getInstance();
             return raven != null ? raven : new RavenClickGui();
         }
+        if (style.getValue() == 3) {
+            CheadleClickGui cheadle = CheadleClickGui.getInstance();
+            return cheadle != null ? cheadle : new CheadleClickGui();
+        }
         return ClickGuiScreen.getInstance();
     }
 
@@ -84,7 +90,8 @@ public class ClickGUIModule extends Module {
     public void verifyValue(String name) {
         if ("Style".equalsIgnoreCase(name)) {
             Minecraft mc = Minecraft.getMinecraft();
-            if (mc.currentScreen instanceof ClickGui || mc.currentScreen instanceof ClickGuiScreen) {
+            if (mc.currentScreen instanceof ClickGui || mc.currentScreen instanceof ClickGuiScreen
+                    || mc.currentScreen instanceof RavenClickGui || mc.currentScreen instanceof CheadleClickGui) {
                 openSelectedGui();
             }
         }

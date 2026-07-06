@@ -245,6 +245,14 @@ public class RenderUtil {
         GlStateManager.alphaFunc(GL_GREATER, (float) (limit * .01));
     }
 
+    public static void startBlend() {
+        GLUtil.startBlend();
+    }
+
+    public static void endBlend() {
+        GLUtil.endBlend();
+    }
+
     public static void drawRoundedGradientOutlinedRectangle(float x, float y, float x2, float y2, final float radius, final int n6, final int n7, final int n8) {
         x *= 2.0f;
         y *= 2.0f;
