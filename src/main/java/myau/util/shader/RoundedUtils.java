@@ -227,18 +227,6 @@ public class RoundedUtils {
         return (color >> 16 & 0xFF) / 255.0F;
     }
 
-    private static float getGreen(int color) {
-        return (color >> 8 & 0xFF) / 255.0F;
-    }
-
-    private static float getBlue(int color) {
-        return (color & 0xFF) / 255.0F;
-    }
-
-    private static float getAlpha(int color) {
-        return (color >> 24 & 0xFF) / 255.0F;
-    }
-
     public static void drawRoundOutline(
             float x,
             float y,
@@ -249,11 +237,12 @@ public class RoundedUtils {
             Color color,
             Color outlineColor) {
         RenderUtil.resetColor();
-        RenderUtil.startBlend();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         RenderUtil.setAlphaLimit(0);
-        roundedOutlineShader.init();
 
+        roundedOutlineShader.init();
         ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
         setupRoundedRectUniforms(x, y, width, height, radius, roundedOutlineShader);
         roundedOutlineShader.setUniformf("outlineThickness", outlineThickness * sr.getScaleFactor());
@@ -276,6 +265,18 @@ public class RoundedUtils {
                 width + (4 + outlineThickness * 2),
                 height + (4 + outlineThickness * 2));
         roundedOutlineShader.unload();
-        RenderUtil.endBlend();
+        GlStateManager.disableBlend();
+    }
+
+    private static float getGreen(int color) {
+        return (color >> 8 & 0xFF) / 255.0F;
+    }
+
+    private static float getBlue(int color) {
+        return (color & 0xFF) / 255.0F;
+    }
+
+    private static float getAlpha(int color) {
+        return (color >> 24 & 0xFF) / 255.0F;
     }
 }

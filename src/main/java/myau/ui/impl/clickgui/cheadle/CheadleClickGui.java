@@ -52,12 +52,12 @@ public class CheadleClickGui extends GuiScreen {
             "ESP", "Chams", "FullBright", "Tracers", "NameTags", "Xray", "TargetESP", "TargetHUD", "Indicators",
             "BedESP", "ItemESP", "BreakProgress", "ViewClip", "NoHurtCam", "HUD", "GuiModule", "RiseClickGUI",
             "ClickGUI", "ChestESP", "Trajectories", "Radar", "RenderFixes", "FPScounter", "WaterMark", "WaterMark2",
-            "HitParticleEffects", "DynamicIsland", "ESP2D", "TeamHealthDisplay", "SeasonDisplay", "Animations",
-            "BlockOverlay", "Ambience");
+            "HitParticleEffects", "DynamicIsland", "ESP2D", "TeamHealthDisplay", "SessionDisplay", "Animations",
+            "BlockOverlay", "Ambience", "Capes");
     private static final Set<String> PLAYER = set(
             "AutoHeal", "FakeLag", "AutoTool", "ChestStealer", "AutoBedDef", "InvManager", "InvWalk", "Scaffold",
             "AutoBlockIn", "AutoSwap", "SpeedMine", "FastPlace", "GhostHand", "MCF", "AntiDebuff", "FlagDetector",
-            "AutoGapple", "ChestAura", "AutoHeadHitter", "ThrowAura");
+            "AutoGapple", "ChestAura", "AutoHeadHitter", "ThrowAura", "AutoAuth");
 
     private static Set<String> set(String... names) {
         Set<String> s = new HashSet<>();

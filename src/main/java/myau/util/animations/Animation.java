@@ -6,7 +6,7 @@ public abstract class Animation {
 
     public TimerUtil TimerUtil = new TimerUtil();
     protected int duration;
-    protected double endPoint;
+    private double startPoint, endPoint, value;
     protected Direction direction;
 
     public Animation(int ms, double endPoint) {
@@ -91,4 +91,7 @@ public abstract class Animation {
 
     protected abstract double getEquation(double x);
 
+    public float getFloatValue() {
+        return (float) value;
+    }
 }

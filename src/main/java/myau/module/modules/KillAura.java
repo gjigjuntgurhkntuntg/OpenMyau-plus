@@ -833,7 +833,7 @@ public class KillAura extends Module {
                         if (Math.abs(MathHelper.wrapAngleTo180_float(currentRot.yaw - playerRot.yaw)) > 1.0F || Math.abs(MathHelper.wrapAngleTo180_float(currentRot.pitch - playerRot.pitch)) > 1.0F) {
                             this.isSmoothBacking = true;
                             Rotation nextRot = getSmoothBackRotation(currentRot, playerRot);
-                            
+
                             float[] fixed = RotationUtil.gcd(new float[]{nextRot.yaw, nextRot.pitch}, new float[]{currentRot.yaw, currentRot.pitch});
                             nextRot = new Rotation(fixed[0], fixed[1]);
 
@@ -855,7 +855,7 @@ public class KillAura extends Module {
                             }
 
                             Rotation nextRot = updateLiquidBounceRotation(currentRot);
-                            
+
                             float[] fixed = RotationUtil.gcd(new float[]{nextRot.yaw, nextRot.pitch}, new float[]{currentRot.yaw, currentRot.pitch});
                             nextRot = new Rotation(fixed[0], fixed[1]);
 
@@ -905,7 +905,7 @@ public class KillAura extends Module {
                             );
                             float finalYaw = rotations[0] + randomYaw;
                             float finalPitch = rotations[1] + randomPitch;
-                            
+
                             // GCD FIX
                             float[] fixed = RotationUtil.gcd(new float[]{finalYaw, finalPitch}, new float[]{event.getYaw(), event.getPitch()});
                             finalYaw = fixed[0];

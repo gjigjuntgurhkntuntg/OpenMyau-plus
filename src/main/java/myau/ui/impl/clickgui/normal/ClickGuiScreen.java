@@ -111,7 +111,8 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(ESP2D.class),
                 Myau.moduleManager.getModule(RiseClickGUIModule.class),
                 Myau.moduleManager.getModule(TeamHealthDisplay.class),
-                Myau.moduleManager.getModule(SeasonDisplay.class),
+                Myau.moduleManager.getModule(SessionDisplay.class),
+                Myau.moduleManager.getModule(Capes.class),
                 Myau.moduleManager.getModule(Animations.class),
                 Myau.moduleManager.getModule(Ambience.class),
                 Myau.moduleManager.getModule(ClickGUIModule.class)
@@ -156,6 +157,7 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(ClientSpoofer.class),
                 Myau.moduleManager.getModule(MouseRawInput.class),
                 Myau.moduleManager.getModule(BedwarUtils.class),
+                Myau.moduleManager.getModule(AutoAuth.class),
                 Myau.moduleManager.getModule(AutoHypixel.class)
         );
 

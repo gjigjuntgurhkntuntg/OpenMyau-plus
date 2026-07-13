@@ -147,6 +147,8 @@ public class Myau {
         moduleManager.modules.put(Piercing.class, new Piercing());
         moduleManager.modules.put(BedwarUtils.class, new BedwarUtils());
         moduleManager.modules.put(NoSlow.class, new NoSlow());
+        moduleManager.modules.put(AutoAuth.class, new AutoAuth());
+        moduleManager.modules.put(Capes.class, new Capes());
         moduleManager.modules.put(MoveFix.class, new MoveFix());
         moduleManager.modules.put(ClickAssits.class, new ClickAssits());
         moduleManager.modules.put(Timer.class, new Timer());
@@ -163,7 +165,7 @@ public class Myau {
         moduleManager.modules.put(AntiBot.class, new AntiBot());
         moduleManager.modules.put(AutoBedDef.class, new AutoBedDef());
         moduleManager.modules.put(TickBase.class, new TickBase());
-        moduleManager.modules.put(SeasonDisplay.class, new SeasonDisplay());
+        moduleManager.modules.put(SessionDisplay.class, new SessionDisplay());
         moduleManager.modules.put(Spammer.class, new Spammer());
         moduleManager.modules.put(Speed.class, new Speed());
         moduleManager.modules.put(SpeedMine.class, new SpeedMine());

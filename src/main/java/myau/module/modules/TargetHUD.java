@@ -60,7 +60,7 @@ public class TargetHUD extends Module {
 
     public final ModeProperty style = new ModeProperty("style", 0, new String[]{
             "DEFAULT", "RAVENBS-MODERN", "RAVENBS-LEGACY", "FACE", "THREED", "SIMPLE", "CIRCLE", "BlueDEV",
-            "ASTOLFO", "EXHIBITION", "MOON", "RISE", "NEVERLOSE", "TENACITY"
+            "ASTOLFO", "EXHIBITION", "MOON", "RISE", "NEVERLOSE", "TENACITY", "Astolfo"
     });
     public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"}, this::isOpenMyauStyle);
     public final ModeProperty animMode = new ModeProperty("Anim Mode", 0, new String[]{"ELASTIC", "SCALE"}, this::isMyauPlusStyle);

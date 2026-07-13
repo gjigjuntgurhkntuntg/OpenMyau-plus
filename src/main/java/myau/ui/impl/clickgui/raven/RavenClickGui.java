@@ -73,7 +73,7 @@ public class RavenClickGui extends GuiScreen {
                 NoHurtCam.class, HUD.class, GuiModule.class, RiseClickGUIModule.class, ClickGUIModule.class,
                 ChestESP.class, Trajectories.class, Radar.class, RenderFixes.class, FPScounter.class, WaterMark.class,
                 WaterMark2.class, HitParticleEffects.class, DynamicIsland.class, ESP2D.class, TeamHealthDisplay.class,
-                SeasonDisplay.class, Animations.class, BlockOverlay.class, Ambience.class);
+                SessionDisplay.class, Animations.class, BlockOverlay.class, Ambience.class);
         List<Module> playerModules = collect(
                 AutoHeal.class, FakeLag.class, AutoTool.class, ChestStealer.class, AutoBedDef.class, InvManager.class,
                 InvWalk.class, Scaffold.class, AutoBlockIn.class, AutoSwap.class, SpeedMine.class, FastPlace.class,
@@ -82,7 +82,7 @@ public class RavenClickGui extends GuiScreen {
         List<Module> miscModules = collect(
                 Spammer.class, BedNuker.class, AntiBot.class, BedTracker.class, LightningTracker.class, NoRotate.class,
                 NickHider.class, AntiObbyTrap.class, AntiObfuscate.class, AutoAnduril.class, InventoryClicker.class,
-                Disabler.class, ClientSpoofer.class, AutoHypixel.class, MouseRawInput.class, BedwarUtils.class);
+                Disabler.class, ClientSpoofer.class, AutoHypixel.class, MouseRawInput.class, BedwarUtils.class, AutoAuth.class);
 
         String[] names = {"Combat", "Movement", "Render", "Player", "Misc"};
         List<List<Module>> groups = Arrays.asList(combatModules, movementModules, renderModules, playerModules, miscModules);

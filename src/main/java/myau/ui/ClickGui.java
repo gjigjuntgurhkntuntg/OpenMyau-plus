@@ -112,7 +112,8 @@ public class ClickGui extends GuiScreen {
         renderModules.add(Myau.moduleManager.getModule(DynamicIsland.class));
         renderModules.add(Myau.moduleManager.getModule(ESP2D.class));
         renderModules.add(Myau.moduleManager.getModule(TeamHealthDisplay.class));
-        renderModules.add(Myau.moduleManager.getModule(SeasonDisplay.class));
+        renderModules.add(Myau.moduleManager.getModule(SessionDisplay.class));
+        renderModules.add(Myau.moduleManager.getModule(Capes.class));
         renderModules.add(Myau.moduleManager.getModule(Animations.class));
 
         List<Module> playerModules = new ArrayList<>();
@@ -153,6 +154,7 @@ public class ClickGui extends GuiScreen {
         miscModules.add(Myau.moduleManager.getModule(ClientSpoofer.class));
         miscModules.add(Myau.moduleManager.getModule(AutoHypixel.class));
         miscModules.add(Myau.moduleManager.getModule(BedwarUtils.class));
+        miscModules.add(Myau.moduleManager.getModule(AutoAuth.class));
 
         Comparator<Module> comparator = Comparator.comparing(m -> m.getName().toLowerCase());
         combatModules.sort(comparator);

@@ -133,7 +133,7 @@ public class RotationUtil {
         Vec3 targetPos = eyePos.addVector(lookVec.xCoord * distance, lookVec.yCoord * distance, lookVec.zCoord * distance);
         return boundingBox.calculateIntercept(eyePos, targetPos);
     }
-    
+
     public static double gcd() {
         final float mouseSensitivity = (float) (mc.gameSettings.mouseSensitivity * (1 + Math.random() / 10000000) * 0.6F + 0.2F);
         return mouseSensitivity * mouseSensitivity * mouseSensitivity * 1.2F;
@@ -148,6 +148,6 @@ public class RotationUtil {
         float patchedYaw = prev[0] + (float) (Math.round(deltaYaw / mult) * mult);
         float patchedPitch = prev[1] + (float) (Math.round(deltaPitch / mult) * mult);
 
-        return new float[]{patchedYaw, MathHelper.clamp_float(patchedPitch, -90.0F, 90.0F)};   
+        return new float[]{patchedYaw, MathHelper.clamp_float(patchedPitch, -90.0F, 90.0F)};
     }
 }

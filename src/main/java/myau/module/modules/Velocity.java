@@ -2,159 +2,96 @@ package myau.module.modules;
 
 import com.google.common.base.CaseFormat;
 import myau.Myau;
+import myau.event.EventManager;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
-import myau.event.types.Priority;
 import myau.events.*;
-import myau.mixin.*;
+import myau.mixin.IAccessorEntity;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
-import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
+import myau.property.properties.PercentProperty;
+import myau.util.ChatUtil;
+import myau.util.KeyBindUtil;
 import myau.util.MoveUtil;
-import myau.util.PacketUtil;
-import myau.util.RandomUtil;
-import myau.util.TimerUtil;
-import myau.util.rotation.Rotation;
+import myau.util.RotationUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.client.settings.GameSettings;
+import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.network.play.client.C02PacketUseEntity;
-import net.minecraft.network.play.client.C0APacketAnimation;
-import net.minecraft.network.play.client.C0BPacketEntityAction;
-import net.minecraft.network.play.client.C0FPacketConfirmTransaction;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.client.*;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
+import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.network.play.server.S27PacketExplosion;
-import net.minecraft.network.play.server.S32PacketConfirmTransaction;
 import net.minecraft.potion.Potion;
-import net.minecraft.util.MathHelper;
 
 public class Velocity extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
-    public final ModeProperty mode = new ModeProperty("Mode", 0, new String[]{
-            "Simple", "AAC", "AACPush", "AACZero", "AACv4",
-            "Reverse", "SmoothReverse", "Jump", "Glitch", "LegitSmart",
-            "Vulcan", "MatrixReduce", "Matrix", "Intave",
-            "Hypixel Morden", "Hypixel", "HypixelAir", "BlockSMC", "GrimCombat",
-            "Polar", "MatrixNoXZ", "Intave13", "JumpReset", "Intave14",
-            "HypixelPrediction", "GrimReduce", "IntaveReduce", "Reduce"
-    });
-
-    public final FloatProperty horizontal = new FloatProperty("Horizontal", 0.0f, -2.0f, 2.0f, () -> mode.getValue() == 0);
-    public final FloatProperty vertical = new FloatProperty("Vertical", 0.0f, -2.0f, 2.0f, () -> mode.getValue() == 0);
-
-    public final IntProperty predictionChance = new IntProperty("PredChance", 100, 0, 100, () -> mode.getValue() == 24);
-    public final FloatProperty predictionHorizontal = new FloatProperty("PredHorizontal", 0.0f, 0.0f, 1.0f, () -> mode.getValue() == 24);
-    public final FloatProperty predictionVertical = new FloatProperty("PredVertical", 1.0f, 0.0f, 1.0f, () -> mode.getValue() == 24);
-    public final BooleanProperty predictionFakeCheck = new BooleanProperty("PredFakeCheck", false, () -> mode.getValue() == 24);
-    public final BooleanProperty predictionDebug = new BooleanProperty("PredDebug", false, () -> mode.getValue() == 24);
-
-    public final FloatProperty reverseStrength = new FloatProperty("ReverseStrength", 1.0f, 0.1f, 1.0f, () -> mode.getValue() == 5);
-    public final FloatProperty smoothReverseStrength = new FloatProperty("SmoothRevStrength", 0.05f, 0.02f, 0.1f, () -> mode.getValue() == 6);
-    public final BooleanProperty onLook = new BooleanProperty("OnLook", false, () -> mode.getValue() == 5 || mode.getValue() == 6);
-    public final FloatProperty maxAngleDiff = new FloatProperty("MaxAngle", 45.0f, 5.0f, 90.0f, () -> (mode.getValue() == 5 || mode.getValue() == 6) && onLook.getValue());
-
-    public final FloatProperty aacPushXZ = new FloatProperty("AACPushXZ", 2.0f, 1.0f, 3.0f, () -> mode.getValue() == 2);
-    public final BooleanProperty aacPushY = new BooleanProperty("AACPushY", true, () -> mode.getValue() == 2);
-    public final FloatProperty aacv4Reduce = new FloatProperty("AACv4Reduce", 0.62f, 0.0f, 1.0f, () -> mode.getValue() == 4);
-
-    public final IntProperty chance = new IntProperty("Chance", 100, 0, 100, () -> mode.getValue() == 7);
-    public final IntProperty ticksUntilJump = new IntProperty("JumpTicks", 4, 0, 20, () -> mode.getValue() == 7);
-
-    public final IntProperty legitSmartJumpLimit = new IntProperty("LegitSmartJumpLimit", 2, 1, 5, () -> mode.getValue() == 9);
-
-    public final BooleanProperty matrixDebug = new BooleanProperty("Debug", false, () -> mode.getValue() == 12);
-
-    public final FloatProperty intaveXZOnHit = new FloatProperty("XZ on hit", 0.6f, 0.0f, 1.0f, () -> mode.getValue() == 13);
-    public final FloatProperty intaveXZOnSprintHit = new FloatProperty("XZ on sprint hit", 0.6f, 0.0f, 1.0f, () -> mode.getValue() == 13);
-    public final BooleanProperty intaveReduceUnnecessarySlowdown = new BooleanProperty("Reduce unnecessary slowdown", false, () -> mode.getValue() == 13);
-    public final IntProperty intaveChance = new IntProperty("Chance", 100, 0, 100, () -> mode.getValue() == 13);
-    public final BooleanProperty intaveJump = new BooleanProperty("Jump", false, () -> mode.getValue() == 13);
-    public final BooleanProperty intaveJumpInInv = new BooleanProperty("Jump in inv", false, () -> mode.getValue() == 13 && intaveJump.getValue());
-    public final IntProperty intaveJumpChance = new IntProperty("Jump chance", 80, 0, 100, () -> mode.getValue() == 13 && intaveJump.getValue());
-    public final BooleanProperty intaveNotWhileSpeed = new BooleanProperty("Not while speed", false, () -> mode.getValue() == 13);
-    public final BooleanProperty intaveNotWhileJumpBoost = new BooleanProperty("Not while jump boost", false, () -> mode.getValue() == 13);
-    public final BooleanProperty intaveDebug = new BooleanProperty("Debug", false, () -> mode.getValue() == 13);
-    public final FloatProperty intaveReduceFactor = new FloatProperty("Factor", 0.6f, 0.6f, 1.0f, () -> mode.getValue() == 26);
-    public final IntProperty intaveReduceHurtTime = new IntProperty("HurtTime", 9, 1, 10, () -> mode.getValue() == 26);
-
-    public final IntProperty jumpResetChance = new IntProperty("JRChance", 100, 0, 100, () -> mode.getValue() == 22);
-
-    public final FloatProperty grimRange = new FloatProperty("GrimRange", 3.5f, 0.0f, 6.0f, () -> mode.getValue() == 18);
-    public final IntProperty grimAttacks = new IntProperty("GrimAttacks", 12, 1, 16, () -> mode.getValue() == 18);
-
-    public final FloatProperty intave14Timer1 = new FloatProperty("Intave14-T1", 0.3f, 0.1f, 2.0f, () -> mode.getValue() == 23);
-    public final FloatProperty intave14Timer2 = new FloatProperty("Intave14-T2", 5.0f, 1.0f, 10.0f, () -> mode.getValue() == 23);
-    public final IntProperty reduceMinHurtTime = new IntProperty("ReduceMinHurtTime", 5, 0, 10, () -> mode.getValue() == 25);
-    public final IntProperty reduceMaxHurtTime = new IntProperty("ReduceMaxHurtTime", 10, 0, 20, () -> mode.getValue() == 25);
-    public final FloatProperty reduceFactor = new FloatProperty("ReduceFactor", 0.6f, 0.0f, 1.0f, () -> mode.getValue() == 25);
-    public final BooleanProperty reduceOnlyGround = new BooleanProperty("OnlyGround", false, () -> mode.getValue() == 25);
-
-    public final IntProperty reduceAttackCount = new IntProperty("ReduceAttackCount", 3, 0, 20, () -> mode.getValue() == 27);
-    public final BooleanProperty reduceRequireKillAura = new BooleanProperty("ReduceRequireKillAura", false, () -> mode.getValue() == 27);
-    public final FloatProperty reduceAttackHorizontal = new FloatProperty("ReduceAttackHorizontal", 0.6f, 0.0f, 1.0f, () -> mode.getValue() == 27);
-    public final FloatProperty reduceAttackVertical = new FloatProperty("ReduceAttackVertical", 1.0f, 0.0f, 1.0f, () -> mode.getValue() == 27);
-
-    private final TimerUtil velocityTimer = new TimerUtil();
-    private boolean hasReceivedVelocity = false;
-    private boolean jump = false;
-    private int limitUntilJump = 0;
-    private int intaveTick = 0;
-    private int intaveDamageTick = 0;
-    private long lastAttackTime = 0;
-    private boolean vulcanTrans = false;
-    private boolean hypixelAbsorbed = false;
-    private boolean matrixAbsorbed = false;
-    private boolean attacked = false;
-    private boolean matrixReduced = false;
-    private boolean intaveReduced = false;
-    private int timerTicks = 0;
-
     private int chanceCounter = 0;
+    private boolean pendingExplosion = false;
     private boolean allowNext = true;
-    private float reduceYaw = 0;
-    private boolean shouldRotate = false;
-    private int attackTimer = -1;
-    private int lastHurtTime = 0;
     private boolean jumpFlag = false;
-    private int legitSmartJumpCount = 0;
-    private int reduceRemainingAttackCount = 0;
+
+    private int rotatoTickCounter = 0;
+    private double knockbackX = 0;
+    private double knockbackZ = 0;
+    private float[] targetRotation = null;
+    private int reduceTick = -1;
+    private boolean pressed = false;
+    private boolean hasReceivedVelocity = false;
+    private int ticksSinceVelocity = -1;
+    public static boolean extraAttacked = false;
+    public static boolean velocityAttacked = false;
+
+    private boolean ShouldJump = false;
+
+    private int slapReduceTicks = 0;
+    private int slapAnInt = 0;
+    private boolean slot = false;
+    private boolean attack = false;
+    private boolean swing = false;
+    private boolean block = false;
+    private boolean inventory = false;
+    private boolean dig = false;
+
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"Vanilla", "Jump", "Hypixel", "Slap_Attack"});
+
+    public final PercentProperty chance = new PercentProperty("chance", 100, () -> mode.getValue() <= 1);
+    public final PercentProperty horizontal = new PercentProperty("horizontal", 0, () -> mode.getValue() <= 1);
+    public final PercentProperty vertical = new PercentProperty("vertical", 100, () -> mode.getValue() <= 1);
+    public final PercentProperty explosionHorizontal = new PercentProperty("explosions-horizontal", 100, () -> mode.getValue() <= 1);
+    public final PercentProperty explosionVertical = new PercentProperty("explosions-vertical", 100, () -> mode.getValue() <= 1);
+
+    public final BooleanProperty reduce = new BooleanProperty("reduce", true, () -> mode.getValue() == 2);
+    public final IntProperty attackTimes = new IntProperty("attack-times", 1, 1, 5, () -> mode.getValue() == 2 && reduce.getValue());
+    private final BooleanProperty onlySprinting = new BooleanProperty("only-sprinting", true, () -> mode.getValue() == 2 && reduce.getValue());
+    private final BooleanProperty reduceWhenCanAttack = new BooleanProperty("reduce-when-can-attack", true, () -> mode.getValue() == 2 && reduce.getValue());
+    public final BooleanProperty hypixelJump = new BooleanProperty("jump", true, () -> mode.getValue() == 2);
+    public final BooleanProperty rotate = new BooleanProperty("rotate", false, () -> mode.getValue() == 2);
+    public final IntProperty rotateTick = new IntProperty("rotate-ticks", 3, 1, 12, () -> mode.getValue() == 2 && rotate.getValue());
+
+    public final BooleanProperty slapReduce = new BooleanProperty("reduce", true, () -> mode.getValue() == 3);
+    public final BooleanProperty tickExactEnable = new BooleanProperty("tickExact", true, () -> mode.getValue() == 3);
+    public final IntProperty tick500 = new IntProperty("500", 3, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick1000 = new IntProperty("1000", 4, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick2000 = new IntProperty("2000", 4, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick3000 = new IntProperty("3000", 5, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick4000 = new IntProperty("4000", 6, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick5000 = new IntProperty("5000", 6, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick6000 = new IntProperty("6000", 7, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick7000 = new IntProperty("7000", 7, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick8000 = new IntProperty("8000", 8, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick9000 = new IntProperty("9000", 8, 0, 20, () -> mode.getValue() == 3);
+    public final IntProperty tick10000 = new IntProperty("10000", 9, 0, 20, () -> mode.getValue() == 3);
+
+    public final BooleanProperty fakeCheck = new BooleanProperty("fake-check", true);
+    public final BooleanProperty debugLog = new BooleanProperty("debug-log", false);
 
     public Velocity() {
-        super("Velocity", false, false, "We Use Ur Dih to Remove KnockBack :D");
-    }
-
-    @Override
-    public void onDisabled() {
-        if (mc.thePlayer != null) {
-            ((IAccessorEntityPlayer) mc.thePlayer).setSpeedInAir(0.02F);
-        }
-        ((IAccessorTimer) ((IAccessorMinecraft) mc).getTimer()).setTimerSpeed(1.0f);
-        timerTicks = 0;
-        limitUntilJump = 0;
-        reset();
-
-        chanceCounter = 0;
-        allowNext = true;
-        matrixReduced = false;
-        intaveReduced = false;
-        shouldRotate = false;
-        attackTimer = -1;
-        lastHurtTime = 0;
-        jumpFlag = false;
-        legitSmartJumpCount = 0;
-        reduceRemainingAttackCount = 0;
-    }
-
-    private void reset() {
-        hasReceivedVelocity = false;
-        attacked = false;
-        hypixelAbsorbed = false;
-        matrixAbsorbed = false;
+        super("Velocity", false);
     }
 
     private boolean isInLiquidOrWeb() {
@@ -162,281 +99,62 @@ public class Velocity extends Module {
     }
 
     @EventTarget
-    public void onUpdate(UpdateEvent event) {
-        if (event.getType() == EventType.PRE) {
-            EntityPlayerSP player = mc.thePlayer;
-            if (player == null || player.isInWater() || player.isInLava() || ((IAccessorEntity) player).getIsInWeb())
-                return;
-
-            switch (mode.getValue()) {
-                case 24:
-                    int hurtTime = player.hurtTime;
-                    if (hurtTime > lastHurtTime) {
-
-                        KillAura aura = (KillAura) Myau.moduleManager.modules.get(KillAura.class);
-                        EntityLivingBase target = null;
-                        if (aura != null && aura.isEnabled() && aura.target != null) {
-                            target = aura.target.getEntity();
-                        }
-
-                        if (target == null) {
-                            if (shouldRotate) {
-
-                                Rotation currentRot = new Rotation(player.rotationYaw, player.rotationPitch);
-                                float targetYaw = reduceYaw;
-                                float yawDiff = MathHelper.wrapAngleTo180_float(targetYaw - currentRot.yaw);
-
-                                float newYaw = currentRot.yaw + yawDiff * 0.5f;
-                                player.rotationYaw = newYaw;
-                                player.rotationYawHead = newYaw;
-
-                                if (player.onGround) {
-                                    player.jump();
-                                }
-                                shouldRotate = false;
-                            }
-                        } else {
-                            double distance = player.getDistanceToEntity(target);
-
-                            if (distance > 3.0) {
-                                if (player.onGround) {
-                                    player.jump();
-                                }
-                            } else {
-                                if (player.onGround) {
-                                    player.jump();
-                                }
-                                attackTimer = 1;
-                            }
-                        }
-                    }
-
-                    if (attackTimer == 0) {
-                        KillAura aura = (KillAura) Myau.moduleManager.modules.get(KillAura.class);
-                        EntityLivingBase target = null;
-                        if (aura != null && aura.isEnabled() && aura.target != null) {
-                            target = aura.target.getEntity();
-                        }
-
-                        if (target != null && player.getDistanceToEntity(target) <= 3.0) {
-                            player.swingItem();
-                            mc.playerController.attackEntity(player, target);
-                        }
-                        attackTimer = -1;
-                    }
-
-                    if (attackTimer > 0) {
-                        attackTimer--;
-                    }
-                    lastHurtTime = hurtTime;
-                    break;
-
-                case 8:
-                    if (hasReceivedVelocity) {
-                        player.noClip = true;
-                        if (player.hurtTime == 7) player.motionY = 0.4;
-                        hasReceivedVelocity = false;
-                    }
-                    break;
-                case 5:
-                    if (hasReceivedVelocity) {
-                        if (!player.onGround) {
-                            if (onLook.getValue()) {
-                                KillAura aura = (KillAura) Myau.moduleManager.modules.get(KillAura.class);
-                                Entity target = aura.target != null ? aura.target.getEntity() : null;
-                                if (target != null) {
-                                    Rotation playerRot = new Rotation(player.rotationYaw, player.rotationPitch);
-                                    Rotation targetRot = getRotations(target);
-                                    if (getRotationDifference(playerRot, targetRot) > maxAngleDiff.getValue()) {
-                                        return;
-                                    }
-                                }
-                            }
-                            MoveUtil.setSpeed(MoveUtil.getSpeed() * reverseStrength.getValue());
-                        } else if (velocityTimer.hasTimeElapsed(80)) {
-                            hasReceivedVelocity = false;
-                        }
-                    }
-                    break;
-                case 6:
-                    if (hasReceivedVelocity) {
-                        KillAura aura = (KillAura) Myau.moduleManager.modules.get(KillAura.class);
-                        Entity target = aura.target != null ? aura.target.getEntity() : null;
-
-                        if (target == null) {
-                            ((IAccessorEntityPlayer) player).setSpeedInAir(0.02F);
-                        } else if (onLook.getValue() && getRotationDifference(new Rotation(player.rotationYaw, player.rotationPitch), getRotations(target)) > maxAngleDiff.getValue()) {
-                            hasReceivedVelocity = false;
-                            ((IAccessorEntityPlayer) player).setSpeedInAir(0.02F);
-                        } else {
-                            if (!player.onGround) {
-                                ((IAccessorEntityPlayer) player).setSpeedInAir(smoothReverseStrength.getValue());
-                            } else if (velocityTimer.hasTimeElapsed(80)) {
-                                hasReceivedVelocity = false;
-                                ((IAccessorEntityPlayer) player).setSpeedInAir(0.02F);
-                            }
-                        }
-                    }
-                    break;
-                case 1:
-                    if (hasReceivedVelocity && velocityTimer.hasTimeElapsed(80)) {
-                        player.motionX *= horizontal.getValue();
-                        player.motionZ *= horizontal.getValue();
-                        hasReceivedVelocity = false;
-                    }
-                    break;
-                case 4:
-                    if (player.hurtTime > 0 && !player.onGround) {
-                        player.motionX *= aacv4Reduce.getValue();
-                        player.motionZ *= aacv4Reduce.getValue();
-                    }
-                    break;
-                case 2:
-                    if (jump) {
-                        if (player.onGround) jump = false;
-                    } else {
-                        if (player.hurtTime > 0 && player.motionX != 0 && player.motionZ != 0) {
-                            player.onGround = true;
-                        }
-                        if (player.hurtResistantTime > 0 && aacPushY.getValue()) {
-                            player.motionY -= 0.014999993;
-                        }
-                    }
-                    if (player.hurtResistantTime >= 19) {
-                        player.motionX /= aacPushXZ.getValue();
-                        player.motionZ /= aacPushXZ.getValue();
-                    }
-                    break;
-                case 3:
-                    if (player.hurtTime > 0) {
-                        if (!hasReceivedVelocity || player.onGround || player.fallDistance > 2) return;
-                        player.motionY -= 1.0;
-                        player.isAirBorne = true;
-                        player.onGround = true;
-                    } else {
-                        hasReceivedVelocity = false;
-                    }
-                    break;
-                case 13:
-                    if (hasReceivedVelocity) {
-                        if (!intaveNoAction() && intaveJump.getValue()) {
-                            if ((intaveJumpChance.getValue() >= 100 || RandomUtil.nextInt(0, 100) < intaveJumpChance.getValue())
-                                    && player.onGround && (intaveJumpInInv.getValue() || mc.currentScreen == null)) {
-                                player.jump();
-                            }
-                        }
-                        intaveReduced = false;
-                        hasReceivedVelocity = false;
-                    }
-                    break;
-                case 15:
-                    if (hasReceivedVelocity && player.onGround) hypixelAbsorbed = false;
-                    break;
-                case 16:
-                    if (hasReceivedVelocity) {
-                        if (player.onGround && !((IAccessorEntityLivingBase) player).isJumping()) player.jump();
-                        hasReceivedVelocity = false;
-                    }
-                    break;
-                case 20:
-                    if (hasReceivedVelocity && player.onGround) matrixAbsorbed = false;
-                    break;
-                case 18:
-                    if (attacked) {
-                        if (player.hurtTime == 0) attacked = false;
-                    }
-                    break;
-                case 25:
-                    if (hasReceivedVelocity && player.hurtTime >= reduceMinHurtTime.getValue() && player.hurtTime <= reduceMaxHurtTime.getValue()) {
-                        player.motionX *= reduceFactor.getValue();
-                        player.motionY *= reduceFactor.getValue();
-                        player.motionZ *= reduceFactor.getValue();
-
-                        if (reduceOnlyGround.getValue() && !player.onGround) {
-                            hasReceivedVelocity = false;
-                        }
-                    }
-                    break;
-                case 9:
-                    if (hasReceivedVelocity) {
-                        if (player.onGround && player.hurtTime == 9 && player.isSprinting() && mc.currentScreen == null) {
-                            if (legitSmartJumpCount > legitSmartJumpLimit.getValue()) {
-                                legitSmartJumpCount = 0;
-                            } else {
-                                legitSmartJumpCount++;
-                                if (player.ticksExisted % 5 != 0) {
-                                    player.jump();
-                                }
-                            }
-                        } else if (player.hurtTime == 8) {
-                            hasReceivedVelocity = false;
-                            legitSmartJumpCount = 0;
-                        }
-                    }
-                    break;
-                case 12:
-                    if (hasReceivedVelocity) {
-                        matrixReduced = false;
-                        hasReceivedVelocity = false;
-                    }
-                    break;
-                case 26:
-                    if (!hasReceivedVelocity) break;
-                    intaveTick++;
-                    if (player.hurtTime == 2) {
-                        intaveDamageTick++;
-                        if (player.onGround && intaveTick % 2 == 0 && intaveDamageTick <= 10) {
-                            player.jump();
-                            intaveTick = 0;
-                        }
-                        hasReceivedVelocity = false;
-                    }
-                    break;
-                case 22:
-                    if (hasReceivedVelocity) {
-                        if (!((IAccessorEntityLivingBase) player).isJumping()
-                                && player.isSprinting()
-                                && player.onGround
-                                && player.hurtTime == 9
-                                && (jumpResetChance.getValue() >= 100 || RandomUtil.nextInt(0, 100) < jumpResetChance.getValue())) {
-                            player.jump();
-                            limitUntilJump = 0;
-                        }
-                        hasReceivedVelocity = false;
-                    }
-                    break;
-                case 23:
-                    IAccessorTimer timer = (IAccessorTimer) ((IAccessorMinecraft) mc).getTimer();
-                    if (player.hurtTime == 9) timer.setTimerSpeed(intave14Timer1.getValue());
-                    else if (player.hurtTime >= 3 && player.hurtTime <= 8)
-                        timer.setTimerSpeed(intave14Timer2.getValue());
-                    else if (player.hurtTime == 2) timer.setTimerSpeed(1.0f);
-                    else timer.setTimerSpeed(1.0f);
-                    break;
-                case 27:
-                    if (reduceRemainingAttackCount > 0) {
-                        KillAura aura = (KillAura) Myau.moduleManager.modules.get(KillAura.class);
-                        EntityLivingBase target = aura != null ? aura.getTarget() : null;
-                        if (target != null && (!reduceRequireKillAura.getValue() || aura.isEnabled())) {
-                            mc.playerController.attackEntity(player, target);
-                            player.motionX *= reduceAttackHorizontal.getValue();
-                            player.motionY *= reduceAttackVertical.getValue();
-                            player.motionZ *= reduceAttackHorizontal.getValue();
-                            reduceRemainingAttackCount--;
-                        } else {
-                            reduceRemainingAttackCount = 0;
-                        }
-                    }
-                    break;
-            }
+    public void onKnockback(KnockbackEvent event) {
+        if (!this.isEnabled() || event.isCancelled()) {
+            this.pendingExplosion = false;
+            this.allowNext = true;
+            return;
         }
 
-        if (event.getType() == EventType.POST && mode.getValue() == 24) {
-            if (jumpFlag) {
-                jumpFlag = false;
-                EntityPlayerSP player = mc.thePlayer;
-                if (player.onGround && player.isSprinting() && !player.isPotionActive(net.minecraft.potion.Potion.jump) && !isInLiquidOrWeb()) {
-                    player.movementInput.jump = true;
+        if (!this.allowNext || !this.fakeCheck.getValue()) {
+            this.allowNext = true;
+            if (this.pendingExplosion) {
+                if (this.mode.getValue() <= 1) {
+                    this.pendingExplosion = false;
+                    if (this.explosionHorizontal.getValue() > 0) {
+                        event.setX(event.getX() * (double) this.explosionHorizontal.getValue() / 100.0);
+                        event.setZ(event.getZ() * (double) this.explosionHorizontal.getValue() / 100.0);
+                    } else {
+                        event.setX(mc.thePlayer.motionX);
+                        event.setZ(mc.thePlayer.motionZ);
+                    }
+                    if (this.explosionVertical.getValue() > 0) {
+                        event.setY(event.getY() * (double) this.explosionVertical.getValue() / 100.0);
+                    } else {
+                        event.setY(mc.thePlayer.motionY);
+                    }
+                }
+            } else {
+                if (this.mode.getValue() <= 1) {
+                    this.chanceCounter = (this.chanceCounter % 100) + this.chance.getValue();
+                    if (this.chanceCounter >= 100) {
+                        if (this.mode.getValue() == 1) {
+                            this.jumpFlag = event.getY() > 0.0;
+                        }
+
+                        if (this.horizontal.getValue() > 0) {
+                            event.setX(event.getX() * (double) this.horizontal.getValue() / 100.0);
+                            event.setZ(event.getZ() * (double) this.horizontal.getValue() / 100.0);
+                        } else {
+                            event.setX(mc.thePlayer.motionX);
+                            event.setZ(mc.thePlayer.motionZ);
+                        }
+                        if (this.vertical.getValue() > 0) {
+                            event.setY(event.getY() * (double) this.vertical.getValue() / 100.0);
+                        } else {
+                            event.setY(mc.thePlayer.motionY);
+                        }
+                    }
+                } else if (this.mode.getValue() == 2) {
+                    if (this.rotate.getValue() && event.getY() > 0.0) {
+                        this.knockbackX = event.getX();
+                        this.knockbackZ = event.getZ();
+                        if (Math.abs(this.knockbackX) > 0.01 || Math.abs(this.knockbackZ) > 0.01) {
+                            this.rotatoTickCounter = 1;
+                        }
+                    }
+                    this.ticksSinceVelocity = 0;
+                    this.hasReceivedVelocity = true;
                 }
             }
         }
@@ -444,355 +162,330 @@ public class Velocity extends Module {
 
     @EventTarget
     public void onTick(TickEvent event) {
-        if (mode.getValue() == 14) {
-            IAccessorTimer timer = (IAccessorTimer) ((IAccessorMinecraft) mc).getTimer();
-            if (timerTicks > 0 && timer.getTimerSpeed() <= 1) {
-                float speed = 0.8f + (0.2f * (20 - timerTicks) / 20);
-                timer.setTimerSpeed(Math.min(speed, 1f));
-                --timerTicks;
-            } else if (timer.getTimerSpeed() <= 1) {
-                timer.setTimerSpeed(1f);
+        if (!this.isEnabled() || event.getType() != EventType.PRE) return;
+
+        if (this.ticksSinceVelocity >= 0) {
+            this.ticksSinceVelocity++;
+        }
+        if (this.ticksSinceVelocity >= 10) {
+            this.ticksSinceVelocity = -1;
+            this.ShouldJump = false;
+        }
+    }
+
+    private void handleJumpReset() {
+        if (!this.ShouldJump) return;
+
+        Scaffold scaffold = (Scaffold) Myau.moduleManager.getModule(Scaffold.class);
+        if (mc.thePlayer == null || mc.currentScreen instanceof GuiInventory || scaffold.isEnabled()) return;
+        if (this.ticksSinceVelocity >= 0) {
+            if (this.ticksSinceVelocity == 0) {
+                this.pressed = mc.gameSettings.keyBindJump.isPressed();
+            }
+            if (this.ticksSinceVelocity <= 2 && mc.thePlayer.onGround) {
+                KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
+            }
+        }
+        if (this.ticksSinceVelocity >= 4 && this.ticksSinceVelocity <= 9) {
+            KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), this.pressed);
+        }
+    }
+
+    @EventTarget
+    public void onLivingUpdate(LivingUpdateEvent event) {
+        // 加上对 Mode 2 且开启了 hypixelJump 选项的判断
+        boolean isMode1 = this.mode.getValue() == 1;
+        boolean isMode2Jump = this.mode.getValue() == 2 && this.hypixelJump.getValue();
+
+        if (this.isEnabled() && this.jumpFlag && (isMode1 || isMode2Jump)) {
+            this.jumpFlag = false;
+            if (mc.thePlayer.onGround && mc.thePlayer.isSprinting() && !mc.thePlayer.isPotionActive(Potion.jump) && !this.isInLiquidOrWeb()) {
+                mc.thePlayer.movementInput.jump = true;
             }
         }
     }
 
-    @EventTarget(Priority.HIGHEST)
-    public void onPacket(PacketEvent event) {
+    @EventTarget
+    public void onUpdate(UpdateEvent event) {
         if (!this.isEnabled()) return;
 
-        EntityPlayerSP player = mc.thePlayer;
-        if (player == null) return;
-
-        if (event.getPacket() instanceof S12PacketEntityVelocity) {
-            S12PacketEntityVelocity packet = (S12PacketEntityVelocity) event.getPacket();
-            if (packet.getEntityID() != player.getEntityId()) return;
-
-            velocityTimer.reset();
-            IAccessorS12PacketEntityVelocity accessor = (IAccessorS12PacketEntityVelocity) packet;
-
-            switch (mode.getValue()) {
-                case 24:
-                    double x = (double) packet.getMotionX() / 8000.0;
-                    double z = (double) packet.getMotionZ() / 8000.0;
-
-                    if (x != 0 || z != 0) {
-                        reduceYaw = (float) (Math.toDegrees(Math.atan2(-z, -x)) - 90.0);
-                        shouldRotate = true;
+        if (this.mode.getValue() == 2) {
+            if (event.getType() == EventType.PRE) {
+                if (this.reduce.getValue()) {
+                    if (this.velocityAttacked) {
+                        KillAura killAura = (KillAura) Myau.moduleManager.getModule(KillAura.class);
+                        if (killAura.getTarget() != null && killAura.isEnabled()) {
+                            EventManager.call(new AttackEvent(killAura.getTarget()));
+                            mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
+                            mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(killAura.getTarget(), C02PacketUseEntity.Action.ATTACK));
+                            mc.thePlayer.motionX *= 0.6D;
+                            mc.thePlayer.motionZ *= 0.6D;
+                            mc.thePlayer.setSprinting(false);
+                        }
+                        velocityAttacked = false;
                     }
 
-                    if (predictionFakeCheck.getValue() && !allowNext) {
-                        allowNext = true;
-                        return;
+                    if (this.hasReceivedVelocity) {
+                        if (this.reduceTick >= this.attackTimes.getValue()) {
+                            this.reduceTick = 0;
+                            this.hasReceivedVelocity = false;
+                        }
+                        KillAura killAura = (KillAura) Myau.moduleManager.getModule(KillAura.class);
+                        if (killAura.getTarget() != null) {
+                            if (mc.thePlayer.isSprinting() || !this.onlySprinting.getValue()) {
+                                if (!this.reduceWhenCanAttack.getValue()
+                                        || (killAura.blockTick == 0 && killAura.autoBlock.getValue() == 4)
+                                        || (killAura.autoBlock.getValue() == 3 && killAura.blockTick == 0)) {
+                                    EventManager.call(new AttackEvent(killAura.getTarget()));
+                                    mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
+                                    mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(killAura.getTarget(), C02PacketUseEntity.Action.ATTACK));
+                                    mc.thePlayer.motionX *= 0.6D;
+                                    mc.thePlayer.motionZ *= 0.6D;
+                                    mc.thePlayer.setSprinting(false);
+                                }
+                            }
+                        }
+                        this.reduceTick++;
                     }
+                }
 
-                    allowNext = true;
+                int maxTick = this.rotateTick.getValue();
+                if (this.rotatoTickCounter > 0 && this.rotatoTickCounter <= maxTick) {
+                    if (this.rotatoTickCounter == 1) {
+                        double deltaX = -this.knockbackX;
+                        double deltaZ = -this.knockbackZ;
+                        this.targetRotation = RotationUtil.getRotationsTo(deltaX, 0, deltaZ, event.getYaw(), event.getPitch());
+                    }
+                    if (this.targetRotation != null) {
+                        event.setRotation(this.targetRotation[0], this.targetRotation[1], 2);
+                        event.setPervRotation(this.targetRotation[0], 2);
+                    }
+                }
+            } else if (event.getType() == EventType.POST) {
+                int maxTick = this.rotateTick.getValue();
+                if (this.rotatoTickCounter > 0 && this.rotatoTickCounter <= maxTick) {
+                    this.rotatoTickCounter++;
+                    if (this.rotatoTickCounter > maxTick) {
+                        this.rotatoTickCounter = 0;
+                        this.targetRotation = null;
+                        this.knockbackX = 0;
+                        this.knockbackZ = 0;
+                    }
+                }
+            }
+        }
 
-                    chanceCounter = (chanceCounter % 100) + predictionChance.getValue();
-                    if (chanceCounter >= 100) {
-                        jumpFlag = true;
-
-                        if (predictionHorizontal.getValue() > 0) {
-                            player.motionX = x * predictionHorizontal.getValue();
-                            player.motionZ = z * predictionHorizontal.getValue();
-                        } else {
-                            player.motionX = 0;
-                            player.motionZ = 0;
+        if (this.mode.getValue() == 3 && this.slapReduce.getValue() && event.getType() == EventType.PRE) {
+            if (this.slapReduceTicks > 0) {
+                this.slapReduceTicks--;
+                KillAura killAura = (KillAura) Myau.moduleManager.getModule(KillAura.class);
+                if (killAura != null && killAura.isEnabled() && killAura.getTarget() != null) {
+                    EntityLivingBase target = killAura.getTarget();
+                    if (!((IAccessorEntity) mc.thePlayer).getIsInWeb() && mc.thePlayer.isSprinting() && MoveUtil.isMoving() && target != mc.thePlayer && !this.badPackets()) {
+                        EventManager.call(new AttackEvent(target));
+                        mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
+                        mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(target, C02PacketUseEntity.Action.ATTACK));
+                        mc.thePlayer.motionX *= 0.6;
+                        mc.thePlayer.motionZ *= 0.6;
+                        mc.thePlayer.setSprinting(false);
+                        this.slapAnInt++;
+                        if (this.debugLog.getValue()) {
+                            ChatUtil.sendFormatted(Myau.clientName + "Attack reduce " + this.slapAnInt);
                         }
+                    }
+                }
+            }
+        }
+    }
 
-                        if (predictionVertical.getValue() > 0) {
-                            player.motionY = (double) packet.getMotionY() / 8000.0 * predictionVertical.getValue();
-                        } else {
-                            player.motionY = 0;
+    @EventTarget
+    public void onPacket(PacketEvent event) {
+        if (!this.isEnabled() || event.isCancelled()) return;
+
+        if (this.mode.getValue() == 3 && event.getType() == EventType.SEND) {
+            Packet<?> packet = event.getPacket();
+            if (packet instanceof C09PacketHeldItemChange) {
+                this.slot = true;
+            } else if (packet instanceof C0APacketAnimation) {
+                this.swing = true;
+            } else if (packet instanceof C02PacketUseEntity) {
+                C02PacketUseEntity useEntity = (C02PacketUseEntity) packet;
+                if (useEntity.getAction() == C02PacketUseEntity.Action.ATTACK) {
+                    this.attack = true;
+                }
+            } else if (packet instanceof C08PacketPlayerBlockPlacement) {
+                this.block = true;
+            } else if (packet instanceof C07PacketPlayerDigging) {
+                this.block = true;
+                this.dig = true;
+            } else if (packet instanceof C0DPacketCloseWindow ||
+                    packet instanceof C0EPacketClickWindow ||
+                    (packet instanceof C16PacketClientStatus &&
+                            ((C16PacketClientStatus) packet).getStatus() == C16PacketClientStatus.EnumState.OPEN_INVENTORY_ACHIEVEMENT)) {
+                this.inventory = true;
+            } else if (packet instanceof C03PacketPlayer) {
+                this.resetBadPackets();
+            }
+        }
+
+        if (event.getType() == EventType.RECEIVE) {
+            if (this.mode.getValue() == 0 || this.mode.getValue() == 1) {
+                if (event.getPacket() instanceof S27PacketExplosion) {
+                    S27PacketExplosion packet = (S27PacketExplosion) event.getPacket();
+                    if (packet.func_149149_c() != 0.0F || packet.func_149144_d() != 0.0F || packet.func_149147_e() != 0.0F) {
+                        this.pendingExplosion = true;
+                        if (this.explosionHorizontal.getValue() == 0 || this.explosionVertical.getValue() == 0) {
+                            event.setCancelled(true);
                         }
-
-                        if (predictionDebug.getValue()) {
-                            player.addChatMessage(new net.minecraft.util.ChatComponentText(
-                                    String.format("Velocity (tick: %d, x: %.2f, y: %.2f, z: %.2f)",
-                                            player.ticksExisted,
-                                            x, (double) packet.getMotionY() / 8000.0, z
+                        if (this.debugLog.getValue()) {
+                            ChatUtil.sendFormatted(
+                                    String.format(
+                                            "%sExplosion (&otick: %d, x: %.2f, y: %.2f, z: %.2f&r)&r",
+                                            Myau.clientName,
+                                            mc.thePlayer.ticksExisted,
+                                            mc.thePlayer.motionX + (double) packet.func_149149_c(),
+                                            mc.thePlayer.motionY + (double) packet.func_149144_d(),
+                                            mc.thePlayer.motionZ + (double) packet.func_149147_e()
                                     )
-                            ));
-                        }
-                    } else {
-                        event.setCancelled(true);
-                    }
-                    break;
-
-                case 0:
-                    event.setCancelled(true);
-                    if (horizontal.getValue() == 0 && vertical.getValue() == 0) return;
-
-                    if (horizontal.getValue() != 0) {
-                        player.motionX = (double) packet.getMotionX() / 8000.0 * horizontal.getValue();
-                        player.motionZ = (double) packet.getMotionZ() / 8000.0 * horizontal.getValue();
-                    }
-                    if (vertical.getValue() != 0) {
-                        player.motionY = (double) packet.getMotionY() / 8000.0 * vertical.getValue();
-                    }
-                    break;
-                case 18:
-                    if (player.isDead || player.isOnLadder() || player.isInWater() || player.isInLava()) return;
-                    double hStr = Math.sqrt(packet.getMotionX() * packet.getMotionX() + packet.getMotionZ() * packet.getMotionZ());
-                    if (hStr <= 1000) return;
-
-                    Entity target = null;
-                    if (mc.objectMouseOver != null && mc.objectMouseOver.entityHit instanceof EntityLivingBase) {
-                        if (player.getDistanceToEntity(mc.objectMouseOver.entityHit) <= grimRange.getValue()) {
-                            target = mc.objectMouseOver.entityHit;
+                            );
                         }
                     }
-                    if (target == null) {
-                        KillAura aura = (KillAura) Myau.moduleManager.modules.get(KillAura.class);
-                        if (aura.target != null && player.getDistanceToEntity(aura.target.getEntity()) <= grimRange.getValue()) {
-                            target = aura.target.getEntity();
-                        }
-                    }
-
-                    if (target != null) {
-                        boolean sprinting = player.isSprinting();
-                        if (!sprinting)
-                            PacketUtil.sendPacket(new C0BPacketEntityAction(player, C0BPacketEntityAction.Action.START_SPRINTING));
-
-                        for (int i = 0; i < grimAttacks.getValue(); i++) {
-                            PacketUtil.sendPacket(new C02PacketUseEntity(target, C02PacketUseEntity.Action.ATTACK));
-                            PacketUtil.sendPacket(new C0APacketAnimation());
-                        }
-
-                        if (!sprinting)
-                            PacketUtil.sendPacket(new C0BPacketEntityAction(player, C0BPacketEntityAction.Action.STOP_SPRINTING));
-                        attacked = true;
-                        event.setCancelled(true);
-                    }
-                    break;
-                case 1:
-                case 5:
-                case 6:
-                case 3:
-                case 9:
-                case 13:
-                case 19:
-                case 21:
-                case 22:
-                case 23:
-                case 25:
-                case 26:
-                    hasReceivedVelocity = true;
-                    break;
-                case 27:
-                    reduceRemainingAttackCount = reduceAttackCount.getValue();
-                    break;
-                case 2:
-                    if (jump && player.onGround) jump = false;
-                    break;
-                case 7:
-                    double motionX = packet.getMotionX() / 8000.0;
-                    double motionZ = packet.getMotionZ() / 8000.0;
-                    if (Math.abs(Math.atan2(motionX, motionZ) - Math.toRadians(player.rotationYaw)) < 2.0) {
-                        hasReceivedVelocity = true;
-                    }
-                    break;
-                case 8:
-                    if (!player.onGround) return;
-                    hasReceivedVelocity = true;
-                    event.setCancelled(true);
-                    break;
-                case 11:
-                    accessor.setMotionX((int) (packet.getMotionX() * 0.33));
-                    accessor.setMotionZ((int) (packet.getMotionZ() * 0.33));
-                    if (player.onGround) {
-                        accessor.setMotionX((int) (packet.getMotionX() * 0.86));
-                        accessor.setMotionZ((int) (packet.getMotionZ() * 0.86));
-                    }
-                    break;
-                case 12:
-                    hasReceivedVelocity = true;
-                    break;
-                case 17:
-                    hasReceivedVelocity = true;
-                    event.setCancelled(true);
-                    PacketUtil.sendPacket(new C0BPacketEntityAction(player, C0BPacketEntityAction.Action.START_SNEAKING));
-                    PacketUtil.sendPacket(new C0BPacketEntityAction(player, C0BPacketEntityAction.Action.STOP_SNEAKING));
-                    break;
-                case 14:
-                    if (player.onGround || player.fallDistance < 0.5) {
-                        hasReceivedVelocity = true;
-                        event.setCancelled(true);
-                    }
-                    break;
-                case 15:
-                    hasReceivedVelocity = true;
-                    if (!player.onGround) {
-                        if (!hypixelAbsorbed) {
-                            event.setCancelled(true);
-                            hypixelAbsorbed = true;
-                            return;
-                        }
-                    }
-                    accessor.setMotionX((int) (player.motionX * 8000));
-                    accessor.setMotionZ((int) (player.motionZ * 8000));
-                    break;
-                case 16:
-                    hasReceivedVelocity = true;
-                    event.setCancelled(true);
-                    break;
-                case 20:
-                    hasReceivedVelocity = true;
-                    if (!player.onGround) {
-                        if (!matrixAbsorbed) {
-                            event.setCancelled(true);
-                            matrixAbsorbed = true;
-                            return;
-                        }
-                    }
-                    accessor.setMotionX(0);
-                    accessor.setMotionZ(0);
-                    break;
-                case 10:
-                    event.setCancelled(true);
-                    break;
+                }
             }
-        }
 
-        if (event.getPacket() instanceof S27PacketExplosion) {
-            S27PacketExplosion packet = (S27PacketExplosion) event.getPacket();
-            IAccessorS27PacketExplosion accessor = (IAccessorS27PacketExplosion) packet;
+            if (event.getPacket() instanceof S12PacketEntityVelocity) {
+                S12PacketEntityVelocity packet = (S12PacketEntityVelocity) event.getPacket();
+                if (packet.getEntityID() == mc.thePlayer.getEntityId()) {
 
-            if (mode.getValue() == 0) {
-                if (horizontal.getValue() == 0 && vertical.getValue() == 0) {
-                    event.setCancelled(true);
-                } else {
-                    accessor.setField_149152_f(accessor.getField_149152_f() * horizontal.getValue());
-                    accessor.setField_149153_g(accessor.getField_149153_g() * vertical.getValue());
-                    accessor.setField_149159_h(accessor.getField_149159_h() * horizontal.getValue());
+                    if (this.mode.getValue() == 2) {
+                        this.hasReceivedVelocity = true;
+                        this.ticksSinceVelocity = 0;
+                        this.jumpFlag = packet.getMotionY() > 0;
+                    }
+
+                    if (this.mode.getValue() == 3 && this.slapReduce.getValue()) {
+                        this.slapReduceTicks = this.calculateSlapTicks(packet.getMotionX(), packet.getMotionZ());
+                        if (this.debugLog.getValue()) {
+                            ChatUtil.sendFormatted(Myau.clientName + "Attack reduceTicks: " + this.slapReduceTicks);
+                        }
+                    }
+                    if (this.debugLog.getValue()) {
+                        ChatUtil.sendFormatted(
+                                String.format(
+                                        "%sVelocity (&otick: %d, x: %.2f, y: %.2f, z: %.2f&r)&r",
+                                        Myau.clientName,
+                                        mc.thePlayer.ticksExisted,
+                                        (double) packet.getMotionX() / 8000.0,
+                                        (double) packet.getMotionY() / 8000.0,
+                                        (double) packet.getMotionZ() / 8000.0
+                                )
+                        );
+                    }
                 }
-            } else if (mode.getValue() == 7) {
-                hasReceivedVelocity = true;
-            } else if (mode.getValue() == 24) {
-                if (predictionDebug.getValue()) {
-                    player.addChatMessage(new net.minecraft.util.ChatComponentText(
-                            String.format("Explosion (tick: %d, x: %.2f, y: %.2f, z: %.2f)",
-                                    player.ticksExisted,
-                                    player.motionX + (double) packet.func_149149_c(),
-                                    player.motionY + (double) packet.func_149144_d(),
-                                    player.motionZ + (double) packet.func_149147_e()
-                            )
-                    ));
-                }
+            }
 
-                if (predictionHorizontal.getValue() == 0 || predictionVertical.getValue() == 0) {
-                    event.setCancelled(true);
+            if (event.getPacket() instanceof S19PacketEntityStatus) {
+                S19PacketEntityStatus packet = (S19PacketEntityStatus) event.getPacket();
+                Entity entity = packet.getEntity(mc.theWorld);
+                if (entity != null && entity.equals(mc.thePlayer) && packet.getOpCode() == 2) {
+                    this.allowNext = false;
                 }
             }
         }
+    }
 
-        if (mode.getValue() == 10) {
-            if (event.getPacket() instanceof S32PacketConfirmTransaction) {
-                event.setCancelled(true);
-                S32PacketConfirmTransaction p = (S32PacketConfirmTransaction) event.getPacket();
-                PacketUtil.sendPacket(new C0FPacketConfirmTransaction(p.getWindowId(), p.getActionNumber(), vulcanTrans));
-                vulcanTrans = !vulcanTrans;
-            }
+    private int calculateSlapTicks(int motionX, int motionZ) {
+        double kb = Math.hypot(motionX, motionZ);
+        if (!tickExactEnable.getValue()) {
+            double ticks = 6.43153527E-4 * kb + 2.9419087136;
+            int result = (int) Math.round(ticks);
+            if (result < 1) result = 1;
+            if (result > 10) result = 10;
+            return result;
         }
+        if (kb <= 500) return tick500.getValue();
+        if (kb <= 1000) return tick1000.getValue();
+        if (kb <= 2000) return tick2000.getValue();
+        if (kb <= 3000) return tick3000.getValue();
+        if (kb <= 4000) return tick4000.getValue();
+        if (kb <= 5000) return tick5000.getValue();
+        if (kb <= 6000) return tick6000.getValue();
+        if (kb <= 7000) return tick7000.getValue();
+        if (kb <= 8000) return tick8000.getValue();
+        if (kb <= 9000) return tick9000.getValue();
+        return tick10000.getValue();
+    }
+
+    private boolean badPackets() {
+        return this.badPackets(false, false, false, false, false, false);
+    }
+
+    private boolean badPackets(boolean p1, boolean p2, boolean p3, boolean p4, boolean p5, boolean p6) {
+        if (this.slot && !p1) return true;
+        if (this.attack && !p2) return true;
+        if (this.swing && !p3) return true;
+        if (this.block && !p4) return true;
+        if (this.inventory && !p5) return true;
+        if (this.dig && !p6) return true;
+        return false;
+    }
+
+    private void resetBadPackets() {
+        this.slot = false;
+        this.swing = false;
+        this.attack = false;
+        this.block = false;
+        this.inventory = false;
+        this.dig = false;
     }
 
     @EventTarget
-    public void onJump(JumpEvent event) {
-        if (mode.getValue() == 2) {
-            jump = true;
-            if (!mc.thePlayer.isCollidedVertically) event.setCancelled(true);
-        } else if (mode.getValue() == 3) {
-            if (mc.thePlayer.hurtTime > 0) event.setCancelled(true);
-        }
+    public void onLoadWorld(LoadWorldEvent event) {
+        this.onDisabled();
     }
 
-    @EventTarget
-    public void onAttack(AttackEvent event) {
-        if (mode.getValue() == 13) {
-            if (event.getTarget() instanceof EntityLivingBase && mc.thePlayer.hurtTime > 0) {
-                if (intaveNoAction()) return;
-                if (intaveChance.getValue() < 100 && RandomUtil.nextInt(0, 100) >= intaveChance.getValue()) return;
-                if (intaveReduceUnnecessarySlowdown.getValue() && intaveReduced) return;
-
-                float factor = mc.thePlayer.isSprinting() ? intaveXZOnSprintHit.getValue() : intaveXZOnHit.getValue();
-                mc.thePlayer.motionX *= factor;
-                mc.thePlayer.motionZ *= factor;
-                intaveReduced = true;
-
-                if (intaveDebug.getValue()) {
-                    mc.thePlayer.addChatMessage(new net.minecraft.util.ChatComponentText(
-                            String.format("Reduced %.3f %.3f", mc.thePlayer.motionX, mc.thePlayer.motionZ)
-                    ));
-                }
-            }
-        } else if (mode.getValue() == 12) {
-            if (event.getTarget() instanceof EntityLivingBase && mc.thePlayer.hurtTime > 0) {
-                if (matrixReduced) return;
-
-                if (mc.thePlayer.isSprinting()) {
-                    double motionX = mc.thePlayer.motionX;
-                    double motionZ = mc.thePlayer.motionZ;
-
-                    if (Math.abs(motionX) < 0.625 && Math.abs(motionZ) < 0.625) {
-                        mc.thePlayer.motionX = motionX * 0.4D;
-                        mc.thePlayer.motionZ = motionZ * 0.4D;
-                    } else if (Math.abs(motionX) < 1.25 && Math.abs(motionZ) < 1.25) {
-                        mc.thePlayer.motionX = motionX * 0.67D;
-                        mc.thePlayer.motionZ = motionZ * 0.67D;
-                    }
-                    mc.thePlayer.setSprinting(false);
-
-                    if (matrixDebug.getValue()) {
-                        mc.thePlayer.addChatMessage(new net.minecraft.util.ChatComponentText(
-                                String.format("reduced %.2f %.2f", motionX - mc.thePlayer.motionX, motionZ - mc.thePlayer.motionZ)
-                        ));
-                    }
-                }
-                matrixReduced = true;
-            }
-        } else if (mode.getValue() == 26) {
-            if (!hasReceivedVelocity) return;
-            if (mc.thePlayer.hurtTime == intaveReduceHurtTime.getValue() && System.currentTimeMillis() - lastAttackTime <= 8000L) {
-                mc.thePlayer.motionX *= intaveReduceFactor.getValue();
-                mc.thePlayer.motionZ *= intaveReduceFactor.getValue();
-            }
-            lastAttackTime = System.currentTimeMillis();
-        }
+    @Override
+    public void onEnabled() {
+        this.pendingExplosion = false;
+        this.allowNext = true;
+        this.rotatoTickCounter = 0;
+        this.targetRotation = null;
+        this.knockbackX = 0;
+        this.knockbackZ = 0;
+        this.reduceTick = -1;
+        this.hasReceivedVelocity = false;
+        this.ticksSinceVelocity = -1;
+        extraAttacked = false;
+        velocityAttacked = false;
+        this.jumpFlag = false;
+        this.ShouldJump = false;
+        this.slapReduceTicks = 0;
+        this.slapAnInt = 0;
+        this.resetBadPackets();
     }
 
-    @EventTarget
-    public void onStrafe(StrafeEvent event) {
-        if (mode.getValue() == 7 && hasReceivedVelocity) {
-            if (!((IAccessorEntityLivingBase) mc.thePlayer).isJumping() && RandomUtil.nextInt(0, 100) < chance.getValue() && limitUntilJump >= ticksUntilJump.getValue() && mc.thePlayer.isSprinting() && mc.thePlayer.onGround && mc.thePlayer.hurtTime == 9) {
-                mc.thePlayer.jump();
-                limitUntilJump = 0;
-            }
-            hasReceivedVelocity = false;
-        }
-        if (mc.thePlayer.hurtTime == 9) limitUntilJump++;
-    }
-
-    private boolean intaveNoAction() {
-        return mc.thePlayer != null && mc.thePlayer.getActivePotionEffects().parallelStream()
-                .anyMatch(effect -> (intaveNotWhileSpeed.getValue() && effect.getPotionID() == Potion.moveSpeed.getId())
-                        || (intaveNotWhileJumpBoost.getValue() && effect.getPotionID() == Potion.jump.getId()));
+    @Override
+    public void onDisabled() {
+        this.pendingExplosion = false;
+        this.allowNext = true;
+        this.hasReceivedVelocity = false;
+        this.rotatoTickCounter = 0;
+        this.targetRotation = null;
+        this.knockbackX = 0;
+        this.knockbackZ = 0;
+        this.reduceTick = -1;
+        this.ticksSinceVelocity = -1;
+        extraAttacked = false;
+        velocityAttacked = false;
+        this.jumpFlag = false;
+        this.ShouldJump = false;
+        this.slapReduceTicks = 0;
+        this.slapAnInt = 0;
+        this.resetBadPackets();
     }
 
     @Override
     public String[] getSuffix() {
-        return new String[]{CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, this.mode.getModeString())};
-    }
-
-    private Rotation getRotations(Entity entity) {
-        double x = entity.posX - mc.thePlayer.posX;
-        double z = entity.posZ - mc.thePlayer.posZ;
-        double y = entity.posY + entity.getEyeHeight() - (mc.thePlayer.posY + mc.thePlayer.getEyeHeight());
-        double dist = MathHelper.sqrt_double(x * x + z * z);
-        float yaw = (float) (Math.atan2(z, x) * 180.0D / Math.PI) - 90.0F;
-        float pitch = (float) (-(Math.atan2(y, dist) * 180.0D / Math.PI));
-        return new Rotation(yaw, pitch);
-    }
-
-    private float getRotationDifference(Rotation a, Rotation b) {
-        return Math.abs(MathHelper.wrapAngleTo180_float(a.yaw - b.yaw));
+        return new String[]{this.mode.getModeString()};
     }
 }

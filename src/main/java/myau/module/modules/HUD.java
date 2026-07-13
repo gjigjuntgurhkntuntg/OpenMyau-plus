@@ -53,7 +53,7 @@ public class HUD extends Module {
             ViewClip.class, NoHurtCam.class, HUD.class, GuiModule.class, RiseClickGUIModule.class,
             ChestESP.class, Trajectories.class, Radar.class, RenderFixes.class, FPScounter.class,
             WaterMark.class, WaterMark2.class, HitParticleEffects.class, DynamicIsland.class,
-            ESP2D.class, TeamHealthDisplay.class, SeasonDisplay.class, Animations.class
+            ESP2D.class, TeamHealthDisplay.class, SessionDisplay.class, Animations.class
     ));
     private static final Set<Class<?>> PLAYER_MODULES = new HashSet<>(Arrays.<Class<?>>asList(
             AutoHeal.class, FakeLag.class, AutoTool.class, ChestStealer.class, InvManager.class,
@@ -94,6 +94,7 @@ public class HUD extends Module {
     public final BooleanProperty showBar = new BooleanProperty("bar", true);
     public final ModeProperty sidebarMode = new ModeProperty("sidebar-mode", 0, new String[]{"RIGHT", "LEFT", "TOP", "OUTLINE", "NONE"}, this.showBar::getValue);
     public final BooleanProperty shadow = new BooleanProperty("shadow", true);
+    public final BooleanProperty shaders = new BooleanProperty("Shaders", false);
     public final FloatProperty colorDistance = new FloatProperty("color-dist", 50F, 10F, 100F);
     public final BooleanProperty suffixes = new BooleanProperty("suffixes", true);
     public final ModeProperty separatorMode = new ModeProperty("separator-mode", 0, new String[]{"SPACE", "-", "!", "[]", "{}", "()", "\"\""}, this.suffixes::getValue);
